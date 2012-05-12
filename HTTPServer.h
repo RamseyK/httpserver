@@ -35,31 +35,24 @@ class HTTPServer {
     bool initSocket(int port = 80);
     void closeSockets();
     
-    // Debug
-    void ascii_print(char* data, int length)
-    {
-        for(int i = 0; i <length; i++)
-        {
-            printf("%c ",(unsigned char)*(data+i));
-        }
-        printf("\n");
-    }
-    
 public:
     HTTPServer();
     ~HTTPServer();
     void runServer(int port=80);
+	void stopServer() {
+		keepRunning = false;
+	}
     
     void acceptConnection();
 	Client *getClient(SOCKET clfd);
-    void disconnectClient(Client *cl);
-    void handleClient(Client *cl);
-	void sendResponse(Client *cl, HTTPResponse *res);
+    void disconnectClient(Client* cl);
+    void handleClient(Client* cl);
+	void sendResponse(Client* cl, HTTPResponse* res, bool disconnect = false);
     
     // Request handlers
-    void handleRequest(Client *cl, string requestString);
-    HTTPResponse* handleHead(Client *cl, HTTPRequest *req);
-    HTTPResponse* handleGet(Client *cl, HTTPRequest *req);
+    void handleRequest(Client* cl, HTTPRequest* req);
+    HTTPResponse* handleHead(Client* cl, HTTPRequest *req);
+    HTTPResponse* handleGet(Client* cl, HTTPRequest *req);
 };
 
 #endif

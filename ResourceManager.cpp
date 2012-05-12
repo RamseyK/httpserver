@@ -10,7 +10,7 @@ ResourceManager::ResourceManager(std::string base, bool memoryFS) {
     
     // If a memoryFS, initialize the map and sync the server's memoryFS with the disk once
     if(memoryOnly) {
-		memoryFileMap = new map<string, Resource*>();
+		memoryFileMap = new std::map<std::string, Resource*>();
         refreshMemoryFS();
     }
 }
@@ -51,7 +51,7 @@ void ResourceManager::resetMemoryFS() {
 		return;
     
 	// Cleanup all Resource objects
-	map<string, Resource*>::const_iterator it;
+	std::map<std::string, Resource*>::const_iterator it;
 	for(it = memoryFileMap->begin(); it != memoryFileMap->end(); ++it) {
 		delete it->second;
 	}
@@ -71,8 +71,7 @@ void ResourceManager::refreshMemoryFS() {
 	resetMemoryFS();
     
     // Debug, load test resources
-    if(DEBUG)
-        loadTestMemory();
+    loadTestMemory();
     
 	// Load all files from the disk FS:
 }
@@ -82,8 +81,8 @@ void ResourceManager::loadTestMemory() {
 	Resource *res1 = new Resource("/hey/test2.mres", "", true);
     Resource *res2 = new Resource("/hey/dir/blank.mres", "", true);
     
-	memoryFileMap->insert(pair<string, Resource*>(res1->getRelativeLocation(), res1));
-    memoryFileMap->insert(pair<string, Resource*>(res2->getRelativeLocation(), res2));
+	memoryFileMap->insert(std::pair<std::string, Resource*>(res1->getRelativeLocation(), res1));
+    memoryFileMap->insert(std::pair<std::string, Resource*>(res2->getRelativeLocation(), res2));
 }
 
 /**
@@ -92,7 +91,7 @@ void ResourceManager::loadTestMemory() {
  * @param dirPath Relative directory path
  * @return String representation of the directory. Blank string if invalid directory
  */
-string ResourceManager::listDirectory(std::string dirPath) {
+std::string ResourceManager::listDirectory(std::string dirPath) {
     std::string ret = "";
     std::string tempPath;
     Resource *tempRec;
@@ -105,12 +104,12 @@ string ResourceManager::listDirectory(std::string dirPath) {
     // Memory FS:
     // Build a list of all resources that have a URI that begins with dirPath
     if(memoryOnly) {
-        std::map<string, Resource*>::const_iterator it;
+        std::map<std::string, Resource*>::const_iterator it;
         for(it = memoryFileMap->begin(); it != memoryFileMap->end(); ++it) {
             tempPath = it->first;
             found = tempPath.find(dirPath);
             // Resource's URI falls within the directory search path (dirPath)
-            if(found != string::npos) {
+            if(found != std::string::npos) {
                 // TODO: get properties of the in memory resource and provide them as part of the listing
                 tempRec = it->second;
                 
@@ -155,28 +154,28 @@ Resource* ResourceManager::getResource(std::string uri) {
     
 	// If using memory file system:
 	if(memoryOnly) {
-		std::map<string, Resource*>::const_iterator it;
+		std::map<std::string, Resource*>::const_iterator it;
 		it = memoryFileMap->find(uri);
 		// If it isn't the element past the end (end()), then a resource was found
 		if(it != memoryFileMap->end()) {
 			res = it->second;
 		}
 	} else { // Otherwise check the disk
-        ifstream file;
+        std::ifstream file;
         long long len = 0;
         
         // Open file for reading as binary
         uri = diskBasePath + uri;
-        file.open(uri.c_str(), ios::binary);
+        file.open(uri.c_str(), std::ios::binary);
         
         // Return null if failed
         if(!file.is_open())
             return NULL;
         
         // Get the length of the file
-        file.seekg(0, ios::end);
+        file.seekg(0, std::ios::end);
         len = file.tellg();
-        file.seekg(0, ios::beg);
+        file.seekg(0, std::ios::beg);
         
         // Allocate memory for contents of file and read in the contents
         char *fdata = new char[len];

@@ -1,6 +1,6 @@
 #include "Resource.h"
 
-Resource::Resource(string rel, string disk, bool memoryResident) {
+Resource::Resource(std::string rel, std::string disk, bool memoryResident) {
 	relLoc = rel;
 	diskLoc = disk;
 	inMemory = memoryResident;

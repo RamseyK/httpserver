@@ -9,7 +9,7 @@ HTTPServer::HTTPServer() {
     memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
     keepRunning = false;
 
-	// Create a resource manager managing the base path ./
+	// Create a resource manager managing the VIRTUAL base path ./
     resMgr = new ResourceManager("./", true);
     
     // Instance clientMap, relates Socket Descriptor to pointer to Client object
@@ -41,7 +41,7 @@ bool HTTPServer::initSocket(int port) {
 	// Create a handle for the listening socket, TCP
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(listenSocket == INVALID_SOCKET) {
-		printf("Could not create socket!\n");
+		cout << "Could not create socket!" << endl;
         return false;
 	}
     
@@ -52,14 +52,14 @@ bool HTTPServer::initSocket(int port) {
     
 	// Bind: Assign the address to the socket
 	if(bind(listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
-		printf("Failed to bind to the address!\n");
+		cout << "Failed to bind to the address!" << endl;
         return false;
 	}
     
 	// Listen: Put the socket in a listening state, ready to accept connections
 	// Accept a backlog of the OS Maximum connections in the queue
 	if(listen(listenSocket, SOMAXCONN) != 0) {
-		printf("Failed to put the socket in a listening state\n");
+		cout << "Failed to put the socket in a listening state" << endl;
         return false;
 	}
     
@@ -93,45 +93,6 @@ void HTTPServer::closeSockets() {
 	listenSocket = INVALID_SOCKET;
 }
 
-void HTTPServer::runServer(int port) {
-    // Initialize the socket and put it into a listening state
-    if(!initSocket(port)) {
-        printf("Failed to start server.\n");
-        return;
-    }
-    
-    // Processing loop
-    while(keepRunning) {
-        // Copy master set into fd_read for processing
-        fd_read = fd_master;
-        
-        // Populate read_fd set with client descriptors that are ready to be read
-        int selret = select(fdmax+1, &fd_read, NULL, NULL, NULL);
-        if(selret < 0) {
-            //printf("select failed!");
-            continue;
-        }
-        
-        // Loop through all descriptors in the read_fd set and check to see if data needs to be processed
-        for(int i = 0; i <= fdmax; i++) {
-            // If i isn't within the set of descriptors to be read, skip it
-            if(!FD_ISSET(i, &fd_read))
-               continue;
-            
-            // A new client is waiting to be accepted on the listenSocket
-            if(listenSocket == i) {
-                acceptConnection();
-            } else { // The descriptor is a client
-                Client *cl = getClient(i);
-                handleClient(cl);
-            }
-        }
-    }
-    
-    // Safely shutdown the server and close all open connections and sockets
-    closeSockets();
-}
-
 /**
  * Accept Connection
  * When a new connection is detected in runServer() this function is called. This attempts to accept the pending connection, instance a Client object, and add to the client Map
@@ -161,7 +122,54 @@ void HTTPServer::acceptConnection() {
     clientMap->insert(std::pair<int, Client*>(clfd, cl));
     
     // Print the client's IP on connect
-    printf("%s has connected\n", cl->getClientIP());
+	cout << "[" << cl->getClientIP() << "] connected" << endl;
+}
+
+/**
+ * Run Server
+ * Main server loop where the socket is initialized and the loop is started, checking for new messages or clients to be read with select()
+ * and handling them appropriately
+ */
+void HTTPServer::runServer(int port) {
+    // Initialize the socket and put it into a listening state
+    if(!initSocket(port)) {
+		cout << "Failed to start server." << endl;
+        return;
+    }
+
+	cout << "Server started. Listening on port " << port << "..." << endl;
+    
+    // Processing loop
+    while(keepRunning) {
+		usleep(1000);
+		
+        // Copy master set into fd_read for processing
+        fd_read = fd_master;
+        
+        // Populate read_fd set with client descriptors that are ready to be read
+        if(select(fdmax+1, &fd_read, NULL, NULL, NULL) < 0) {
+            //printf("select failed!");
+            continue;
+        }
+        
+        // Loop through all descriptors in the read_fd set and check to see if data needs to be processed
+        for(int i = 0; i <= fdmax; i++) {
+            // Socket i isn't ready to be read (not in the read set), continue
+            if(!FD_ISSET(i, &fd_read))
+               continue;
+            
+            // A new client is waiting to be accepted on the listenSocket
+            if(listenSocket == i) {
+                acceptConnection();
+            } else { // The descriptor is a client
+                Client *cl = getClient(i);
+                handleClient(cl);
+            }
+        }
+    }
+    
+    // Safely shutdown the server and close all open connections and sockets
+    closeSockets();
 }
 
 /**
@@ -208,12 +216,20 @@ void HTTPServer::disconnectClient(Client *cl) {
 
 // http://www.yolinux.com/TUTORIALS/Sockets.html#TIPS
 
+/**
+ * Handle Client
+ * Recieve data from a client that has indicated (via select()) that it has data waiting. Pass recv'd data to handleRequest()
+ * Also detect any errors in the state of the socket
+ *
+ * @param cl Pointer to Client that sent the data
+ */
 void HTTPServer::handleClient(Client *cl) {
     if (cl == NULL)
         return;
     
+	HTTPRequest* req;
     size_t dataLen = 1300;
-    char *pData = new char[dataLen];
+    char* pData = new char[dataLen];
     
     // Receive data on the wire into pData
     /* TODO: Figure out what flags need to be set */
@@ -223,56 +239,45 @@ void HTTPServer::handleClient(Client *cl) {
     // Determine state of the client socket and act on it
     if(lenRecv == 0) {
         // Client closed the connection
-		printf("Client[%s] has opted to close the connection\n", cl->getClientIP());
+		cout << "[" << cl->getClientIP() << "] has opted to close the connection" << endl;
         disconnectClient(cl);
     } else if(lenRecv < 0) {
         // Something went wrong with the connection
         // TODO: check perror() for the specific error message
         disconnectClient(cl);
     } else {
-        // Print the data the client sent (in ascii)
-        printf("%s: \n", cl->getClientIP());
-        ascii_print(pData, (int)lenRecv);
+		// Data received
+		cout << "[" << cl->getClientIP() << "] " << lenRecv << " bytes received" << endl;
         
-        // Add the packet data to a string and pass to processRequest to serve the request
-        string r;
-        r.append(pData);
-        handleRequest(cl, r);
+        // Place the data in an HTTPRequest and pass it to handleRequest for processing
+		req = new HTTPRequest((byte*)pData, lenRecv);
+        handleRequest(cl, req);
+		delete req;
     }
 
 	delete [] pData;
 }
 
-void HTTPServer::sendResponse(Client *cl, HTTPResponse *res) {
-    size_t dataLen = 0;
-    char *sData = NULL;
-    std::string strResp;
-    
-    // Get the string response, allocate memory for the response
-    strResp = res->generateResponse();
-    dataLen = strlen(strResp.c_str());
-    sData = new char[dataLen];
-    
-    // Send the data over the wire
-    send(cl->getSocket(), sData, dataLen, 0);
-    
-    // Delete the allocated space for the response
-    if(sData != NULL)
-        delete sData;
-}
-
-void HTTPServer::handleRequest(Client *cl, string requestStr) {    
-    // Create an HTTPRequest object to consume the requestStr
-    HTTPRequest *req = new HTTPRequest(requestStr);
-    if(req == NULL)
-        return;
-
-	HTTPResponse *res = NULL;
-    
-    // If there was a parse error, report it and send the appropriate error in response
-    if(req->hasParseError()) {
-        printf("[%s] There was an error processing the request of type: %i\n", cl->getClientIP(), req->getMethod());
-        return;
+/**
+ * Handle Request
+ * Process an incoming request from a Client. Send request off to appropriate handler function
+ * that corresponds to an HTTP operation (GET, HEAD etc) :)
+ *
+ * @param cl Client object where request originated from
+ * @param req HTTPRequest object filled with raw packet data
+ */
+void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
+	HTTPResponse* res = NULL;
+	bool dcClient = false;
+	
+    // Parse the request
+ 	// If there's an error, report it and send the appropriate error in response
+    if(!req->parse()) {
+		cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << endl;
+		cout << req->getParseError() << endl;
+		// TODO: Send appropriate HTTP error message
+		disconnectClient(cl);
+		return;
     }
     
     // Send the request to the correct handler function
@@ -284,26 +289,97 @@ void HTTPServer::handleRequest(Client *cl, string requestStr) {
             res = handleGet(cl, req);
             break;
         default:
-            printf("[%s] Could not handle or determine request of type: %i\n", cl->getClientIP(), req->getMethod());
+			cout << cl->getClientIP() << ": Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << endl;
         break;
     }
-    
-    // Send the built response to the client
-	if(res != NULL)
-		sendResponse(cl, res);
-    
-    // Free memory consumed by req and response object
-    delete req;
-    if(res != NULL)
-        delete res;
+
+	// If a response could not be built, send a 500 (internal server error)
+	if(res == NULL) {
+		res = new HTTPResponse();
+		res->setStatus(Status(SERVER_ERROR));
+		std::string body = res->getStatusStr();
+		res->setData((byte*)body.c_str(), body.size());
+		dcClient = true;
+	}
+	
+	// Send the built response to the client
+	sendResponse(cl, res, dcClient);
+	
+	delete res;
 }
 
+/**
+ * Handle Get
+ * Process a GET request to provide the client with an appropriate response
+ *
+ * @param cl Client requesting the resource
+ * @param req State of the request
+ */
 HTTPResponse* HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
-
-	return NULL;
+	HTTPResponse* res = NULL;
+	
+	// Check if the requested resource exists
+	std::string uri = req->getRequestUri();
+    Resource* r = resMgr->getResource(uri);
+	if(r != NULL) { // Exists
+		
+	} else { // Not found
+		res = new HTTPResponse();
+		res->setStatus(Status(NOT_FOUND));
+		std::string body = res->getStatusStr();
+		res->setData((byte*)body.c_str(), body.size());
+	}
+	
+	return res;
 }
 
+/**
+ * Handle Head
+ * Process a HEAD request to provide the client with an appropriate response
+ *
+ * @param cl Client requesting the resource
+ * @param req State of the request
+ */
 HTTPResponse* HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
+	HTTPResponse* res = NULL;
+	
     return NULL;
 }
+
+/**
+ * Send Response
+ * Send HTTPResponse packet data to a particular Client
+ *
+ * @param cl Client to send data to
+ * @param buf ByteBuffer containing data to be sent
+ * @param disconnect Should the server disconnect the client after sending (Optional, default = false)
+ */
+void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
+	// Get raw data by creating the response (pData will be cleaned up by the response obj)
+	byte* pData = res->create();
+	
+	// Retrieve sizes
+	size_t totalSent = 0, bytesLeft = res->size(), dataLen = res->size();
+    ssize_t n = 0;
+
+	// Solution to deal with partials sends...loop till totalSent matches dataLen
+	while(totalSent < dataLen) {
+		n = send(cl->getSocket(), pData+totalSent, bytesLeft, 0);
+
+		// Client closed the connection
+		if(n < 0) {
+			cout << "[" << cl->getClientIP() << "] has disconnected." << endl;
+			disconnectClient(cl);
+			break;
+		}
+
+		// Adjust byte count after a successful send
+		totalSent += n;
+		bytesLeft -= n;
+	}
+	
+	if(disconnect)
+		disconnectClient(cl);
+}
+
 

@@ -1,6 +1,8 @@
 #ifndef _RESOURCEMANAGER_H_
 #define _RESOURCEMANAGER_H_
 
+#include <string>
+#include <map>
 #include <dirent.h>
 #include <fstream>
 
@@ -36,7 +38,7 @@ public:
 	void loadTestMemory();
     
     // Provide a string rep of the directory listing
-    string listDirectory(std::string dirPath);
+    std::string listDirectory(std::string dirPath);
     
     // Load a file from disk or memory and return it's representation as a Resource object
     Resource* getResource(std::string uri);
