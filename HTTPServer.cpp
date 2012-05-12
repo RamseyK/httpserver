@@ -355,6 +355,22 @@ HTTPResponse* HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
  * @param disconnect Should the server disconnect the client after sending (Optional, default = false)
  */
 void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
+	// Time stamp the response with the Date header
+	string tstr;
+	char tbuf[36];
+	time_t rawtime;
+	struct tm* ptm;
+	time(&rawtime);
+	ptm = gmtime(&rawtime);
+	// Ex: Fri, 31 Dec 1999 23:59:59 GMT
+	strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", ptm);
+	tstr = tbuf;
+	res->addHeader("Date", tstr);
+	
+	// Include a Connection: close header if this is the final response sent by the server
+	if(disconnect)
+		res->addHeader("Connection", "close");
+	
 	// Get raw data by creating the response (pData will be cleaned up by the response obj)
 	byte* pData = res->create();
 	
@@ -377,6 +393,8 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 		totalSent += n;
 		bytesLeft -= n;
 	}
+	
+	cout << "[" << cl->getClientIP() << "] was sent " << totalSent << " bytes" << endl;
 	
 	if(disconnect)
 		disconnectClient(cl);

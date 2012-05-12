@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+#include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
