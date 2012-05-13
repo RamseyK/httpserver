@@ -32,7 +32,7 @@ HTTPResponse.o: HTTPResponse.cpp
 HTTPServer.o: HTTPServer.cpp
 	$(CC) $(FLAGS) -c HTTPServer.cpp -o $@
 
-main.o: Testers.h main.cpp
+main.o: main.cpp
 	$(CC) $(FLAGS) -c main.cpp -o $@
 
 Resource.o: Resource.cpp

@@ -1,9 +1,11 @@
 #include "Resource.h"
 
-Resource::Resource(std::string rel, std::string disk, bool memoryResident) {
-	relLoc = rel;
-	diskLoc = disk;
-	inMemory = memoryResident;
+Resource::Resource(std::string loc) {
+	location = loc;
+	encoding = "";
+	language = "";
+	md5 = "";
+	size = 0;
 	data = NULL;
 }
 

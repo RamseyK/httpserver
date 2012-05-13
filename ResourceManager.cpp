@@ -1,26 +1,21 @@
 #include "ResourceManager.h"
 
-ResourceManager::ResourceManager(std::string base, bool memoryFS) {
-	memoryFileMap = NULL;
-    memoryOnly = memoryFS;
+ResourceManager::ResourceManager(std::string base) {
+	cacheMap = NULL;
     diskBasePath = base;
     
     // Check to see if the disk base path is a valid path
     
     
-    // If a memoryFS, initialize the map and sync the server's memoryFS with the disk once
-    if(memoryOnly) {
-		memoryFileMap = new std::map<std::string, Resource*>();
-        refreshMemoryFS();
-    }
+    // Initialize cache map..possibly preload cache with files as a future feature?
+	cacheMap = new std::map<std::string, Resource*>();
 }
 
 ResourceManager::~ResourceManager() {
-	if(memoryOnly) {
-		resetMemoryFS();
-		// Delete the map instance
-		delete memoryFileMap;
-	}
+	clearCache();
+	
+	// Delete the map instance
+	delete cacheMap;
 }
 
 /**
@@ -44,45 +39,56 @@ bool ResourceManager::isUriSafe(std::string uri) {
 }
 
 /**
- * Dump and delete all resources in the memory file system, then clear it out
+ * Load File
+ * Read a file from disk and load it into the memory cache
+ *
+ * @param uri Request URI (relative path) of the file
+ * @return Return's the resource object upon successful load
  */
-void ResourceManager::resetMemoryFS() {
-	if(!memoryOnly)
-		return;
-    
-	// Cleanup all Resource objects
-	std::map<std::string, Resource*>::const_iterator it;
-	for(it = memoryFileMap->begin(); it != memoryFileMap->end(); ++it) {
-		delete it->second;
-	}
-	memoryFileMap->clear();
+Resource* ResourceManager::loadFile(std::string uri) {
+	std::ifstream file;
+	unsigned int len = 0;
+	
+	// Open the file
+	std::string path = diskBasePath + uri;
+	file.open(path.c_str(), std::ios::binary);
+  
+	// Return null if failed
+	if(!file.is_open())
+	    return NULL;
+  
+	// Get the length of the file
+	file.seekg(0, std::ios::end);
+	len = file.tellg();
+	file.seekg(0, std::ios::beg);
+  
+	// Allocate memory for contents of file and read in the contents
+	byte* fdata = new byte[len];
+	file.read((char*)fdata, len);
+  
+	// Close the file
+	file.close();
+      
+	// Create a new Resource object and setup it's contents
+	Resource* res = new Resource(uri);
+	res->setData(fdata, len);
+	
+	// Insert the resource into the map
+	cacheMap->insert(std::pair<std::string, Resource*>(res->getLocation(), res));
+	
+	return res;
 }
 
 /**
- * For memory mode only:
- * Syncronize the memoryFileMap with the diskBasePath by loading all resoruces in the diskBasePath into memory
- *
+ * Dump and delete all resources in the cache, then clear it out
  */
-void ResourceManager::refreshMemoryFS() {
-	if(!memoryOnly)
-		return;
-    
-	// Reset the FS to start fresh
-	resetMemoryFS();
-    
-    // Debug, load test resources
-    loadTestMemory();
-    
-	// Load all files from the disk FS:
-}
-
-// Debug, load test objects into the memory FS
-void ResourceManager::loadTestMemory() {
-	Resource *res1 = new Resource("/hey/test2.mres", "", true);
-    Resource *res2 = new Resource("/hey/dir/blank.mres", "", true);
-    
-	memoryFileMap->insert(std::pair<std::string, Resource*>(res1->getRelativeLocation(), res1));
-    memoryFileMap->insert(std::pair<std::string, Resource*>(res2->getRelativeLocation(), res2));
+void ResourceManager::clearCache() {
+	// Cleanup all Resource objects
+	std::map<std::string, Resource*>::const_iterator it;
+	for(it = cacheMap->begin(); it != cacheMap->end(); ++it) {
+		delete it->second;
+	}
+	cacheMap->clear();
 }
 
 /**
@@ -92,55 +98,33 @@ void ResourceManager::loadTestMemory() {
  * @return String representation of the directory. Blank string if invalid directory
  */
 std::string ResourceManager::listDirectory(std::string dirPath) {
-    std::string ret = "";
-    std::string tempPath;
-    Resource *tempRec;
-    size_t found;
-    
     // Check URI
     if(!isUriSafe(dirPath))
         return "";
+
+	std::string ret = "";
+    DIR *dir;
+    struct dirent *ent;
+    std::string path = diskBasePath + dirPath;
+    dir = opendir(path.c_str());
+    if(dir == NULL)
+        return "";
     
-    // Memory FS:
-    // Build a list of all resources that have a URI that begins with dirPath
-    if(memoryOnly) {
-        std::map<std::string, Resource*>::const_iterator it;
-        for(it = memoryFileMap->begin(); it != memoryFileMap->end(); ++it) {
-            tempPath = it->first;
-            found = tempPath.find(dirPath);
-            // Resource's URI falls within the directory search path (dirPath)
-            if(found != std::string::npos) {
-                // TODO: get properties of the in memory resource and provide them as part of the listing
-                tempRec = it->second;
-                
-                // Add the relative path to the return with a new line
-                ret += tempPath + "\n";
-            }
-        }
-    } else { // Look in the disk FS
-        DIR *dir;
-        struct dirent *ent;
-        std::string path = diskBasePath + dirPath;
-        dir = opendir(path.c_str());
-        if(dir == NULL)
-            return "";
-        
-        // Add all files and directories to the return
-        while((ent = readdir(dir)) != NULL) {
-            ret += ent->d_name;
-            ret += "\n";
-        }
-        
-        // Close the directory
-        closedir(dir);
+    // Add all files and directories to the return
+    while((ent = readdir(dir)) != NULL) {
+        ret += ent->d_name;
+        ret += "\n";
     }
+    
+    // Close the directory
+    closedir(dir);
     
     return ret;
 }
 
 /**
- * Retrieve a resource from the File System in use (Disk or Memory)
- * Any resource retrieved from this function should be returned after use with returnResource
+ * Retrieve a resource from the File system
+ * The memory cache will be checked before going out to disk
  *
  * @param uri The URI sent in the request
  * @return NULL if unable to load the resource. Resource object
@@ -152,63 +136,16 @@ Resource* ResourceManager::getResource(std::string uri) {
     if(!isUriSafe(uri))
         return NULL;
     
-	// If using memory file system:
-	if(memoryOnly) {
-		std::map<std::string, Resource*>::const_iterator it;
-		it = memoryFileMap->find(uri);
-		// If it isn't the element past the end (end()), then a resource was found
-		if(it != memoryFileMap->end()) {
-			res = it->second;
-		}
-	} else { // Otherwise check the disk
-        std::ifstream file;
-        long long len = 0;
-        
-        // Open file for reading as binary
-        uri = diskBasePath + uri;
-        file.open(uri.c_str(), std::ios::binary);
-        
-        // Return null if failed
-        if(!file.is_open())
-            return NULL;
-        
-        // Get the length of the file
-        file.seekg(0, std::ios::end);
-        len = file.tellg();
-        file.seekg(0, std::ios::beg);
-        
-        // Allocate memory for contents of file and read in the contents
-        char *fdata = new char[len];
-        file.read(fdata, len);
-        
-        // Close the file
-        file.close();
-            
-        // Create a new Resource object and setup it's contents
-        res = new Resource(uri, uri, false);
-        res->setData(fdata);
+	// Check the cache first:
+	std::map<std::string, Resource*>::const_iterator it;
+	it = cacheMap->find(uri);
+	// If it isn't the element past the end (end()), then a resource was found
+	if(it != cacheMap->end()) {
+		res = it->second;
+		return res;
 	}
-    
-	return res;
+
+	// Not in cache, check the disk
+	// Attempt to load the resource into memory from the FS (will be NULL if not found)
+	return loadFile(uri);
 }
-
-/**
- * Any resource retrieved from getResource must be sent back to this function for cleanup
- * Memory resident objects will also be passed to this function and most likely not undergo any changes however, this behavior is desired
- * in the event locks need to be released or future cleanup tasks on all requested resources need to be performed.
- *
- * @param res A resource object allocated within getResource
- *
- */
-void ResourceManager::returnResource(Resource *res) {
-	if(res == NULL)
-		return;
-    
-	// If the resource is memory resident, the object doesn't need to be deleted
-    // Object's loaded from the FS should released
-	if(!res->isMemoryResident()) {
-		delete res;
-	}
-}
-
-

@@ -3,54 +3,50 @@
 
 #include <string>
 
+typedef unsigned char byte;
+
 class Resource {
 
 private:
-    char *data; // Used only for resources stored completely in memory
-    bool valid;
-	bool inMemory; // Flag set to true if the resource is available in memory (data)
+    byte* data; // File data
+	unsigned int size;
     std::string encoding;
     std::string language;
-    std::string diskLoc; // Actual location on disk
-    std::string relLoc; // Resource location within the server
+    std::string location; // Resource location within the server
     std::string md5;
 
 public:
-    Resource(std::string rel, std::string disk, bool memoryResident);
+    Resource(std::string loc);
     ~Resource();
     
     // Setters
     
-    void setData(char *d) {
+    void setData(byte* d, unsigned int s) {
         data = d;
+		size = s;
     }
     
     // Getters
-
-	inline bool isMemoryResident() {
-		return inMemory;
-	}
     
-    inline std::string getEncoding() {
+    std::string getEncoding() {
         return encoding;
     }
     
-    inline std::string getLanguage() {
+    std::string getLanguage() {
         return language;
     }
     
-    inline std::string getDiskLocation() {
-        return diskLoc;
+    std::string getLocation() {
+        return location;
     }
-    
-    inline std::string getRelativeLocation() {
-        return relLoc;
-    }
-    
-    // Determines if the file actually exists in the file system
-    inline bool isValid() {
-        return valid;
-    }
+
+	byte* getData() {
+		return data;
+	}
+	
+	unsigned int getSize() {
+		return size;
+	}
 };
 
 #endif

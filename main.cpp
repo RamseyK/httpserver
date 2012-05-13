@@ -3,7 +3,6 @@
 #include <signal.h>
 
 #include "HTTPServer.h"
-#include "Testers.h"
 
 HTTPServer* svr;
 

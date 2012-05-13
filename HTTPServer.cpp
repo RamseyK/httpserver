@@ -12,7 +12,7 @@ HTTPServer::HTTPServer() {
     memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
 
 	// Create a resource manager managing the VIRTUAL base path ./
-    resMgr = new ResourceManager("./", true);
+    resMgr = new ResourceManager("./htdocs/");
     
     // Instance clientMap, relates Socket Descriptor to pointer to Client object
     clientMap = new map<SOCKET, Client*>();
@@ -111,9 +111,9 @@ void HTTPServer::stop() {
 void HTTPServer::closeSockets() {
     // Close all open connections and delete Client's from memory
     std::map<int, Client*>::const_iterator it;
-    for(it = clientMap->begin(); it != clientMap->end(); it++) {
+    for(it = clientMap->begin(); it != clientMap->end(); ++it) {
         Client *cl = it->second;
-        disconnectClient(cl);
+        disconnectClient(cl, false);
     }
     
     // Clear the map
@@ -230,8 +230,10 @@ Client* HTTPServer::getClient(SOCKET clfd) {
  * Close the client's socket descriptor and release it from the FD map, client map, and memory
  *
  * @param cl Pointer to Client object
+ * @param mapErase When true, remove the client from the client map. Needed if operations on the
+ * client map are being performed and we don't want to remove the map entry right away
  */
-void HTTPServer::disconnectClient(Client *cl) {
+void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
     if(cl == NULL)
         return;
     
@@ -242,13 +244,12 @@ void HTTPServer::disconnectClient(Client *cl) {
     FD_CLR(cl->getSocket(), &fd_master);
     
     // Remove the client from the clientMap
-    clientMap->erase(cl->getSocket());
+	if(mapErase)
+    	clientMap->erase(cl->getSocket());
     
     // Delete the client object from memory
     delete cl;
 }
-
-// http://www.yolinux.com/TUTORIALS/Sockets.html#TIPS
 
 /**
  * Handle Client
@@ -301,45 +302,28 @@ void HTTPServer::handleClient(Client *cl) {
  * @param req HTTPRequest object filled with raw packet data
  */
 void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
-	HTTPResponse* res = NULL;
-	bool dcClient = false;
-	
     // Parse the request
- 	// If there's an error, report it and send the appropriate error in response
+ 	// If there's an error, report it and send a server error in response
     if(!req->parse()) {
 		cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << endl;
 		cout << req->getParseError() << endl;
-		// TODO: Send appropriate HTTP error message
-		disconnectClient(cl);
+		sendStatusResponse(cl, Status(SERVER_ERROR));
 		return;
     }
     
     // Send the request to the correct handler function
     switch(req->getMethod()) {
         case Method(HEAD):
-            res = handleHead(cl, req);
+            handleHead(cl, req);
             break;
         case Method(GET):
-            res = handleGet(cl, req);
+            handleGet(cl, req);
             break;
         default:
 			cout << cl->getClientIP() << ": Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << endl;
-        break;
+			sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+		break;
     }
-
-	// If a response could not be built, send a 500 (internal server error)
-	if(res == NULL) {
-		res = new HTTPResponse();
-		res->setStatus(Status(SERVER_ERROR));
-		std::string body = res->getStatusStr();
-		res->setData((byte*)body.c_str(), body.size());
-		dcClient = true;
-	}
-	
-	// Send the built response to the client
-	sendResponse(cl, res, dcClient);
-	
-	delete res;
 }
 
 /**
@@ -349,22 +333,23 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-HTTPResponse* HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
-	HTTPResponse* res = NULL;
-	
+void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
 	// Check if the requested resource exists
 	std::string uri = req->getRequestUri();
     Resource* r = resMgr->getResource(uri);
 	if(r != NULL) { // Exists
-		
+		HTTPResponse* res = new HTTPResponse();
+		res->setStatus(Status(OK));
+		std::stringstream sz;
+		sz << r->getSize();
+		res->addHeader("Content-Type", "text/html");
+		res->addHeader("Content-Length", sz.str());
+		res->setData(r->getData(), r->getSize());
+		sendResponse(cl, res, true);
+		delete res;
 	} else { // Not found
-		res = new HTTPResponse();
-		res->setStatus(Status(NOT_FOUND));
-		std::string body = res->getStatusStr();
-		res->setData((byte*)body.c_str(), body.size());
+		sendStatusResponse(cl, Status(NOT_FOUND));
 	}
-	
-	return res;
 }
 
 /**
@@ -374,21 +359,60 @@ HTTPResponse* HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-HTTPResponse* HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
-	HTTPResponse* res = NULL;
+void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
+	// Check if the requested resource exists
+	std::string uri = req->getRequestUri();
+    Resource* r = resMgr->getResource(uri);
+	if(r != NULL) { // Exists
+		// Only include headers associated with the file. NEVER contains a body
+		HTTPResponse* res = new HTTPResponse();
+		res->setStatus(Status(OK));
+		std::stringstream sz;
+		sz << r->getSize();
+		res->addHeader("Content-Type", "text/html");
+		res->addHeader("Content-Length", sz.str());
+		sendResponse(cl, res, true);
+		delete res;
+	} else { // Not found
+		sendStatusResponse(cl, Status(NOT_FOUND));
+	}
+}
+
+/**
+ * Send Status Response
+ * Send a predefined HTTP status code response to the client consisting of
+ * only the status code and required headers, then disconnect the client
+ *
+ * @param cl Client to send the status code to
+ * @param status Status code corresponding to the enum in HTTPMessage.h
+ */
+void HTTPServer::sendStatusResponse(Client* cl, int status) {
+	HTTPResponse* res = new HTTPResponse();
+	res->setStatus(Status(status));
+	std::string body = res->getReason();
+	std::stringstream sz;
+	sz << body.size();
+	res->addHeader("Content-Type", "text/html");
+	res->addHeader("Content-Length", sz.str());
+	res->setData((byte*)body.c_str(), body.size());
 	
-    return NULL;
+	sendResponse(cl, res, true);
+	
+	delete res;
 }
 
 /**
  * Send Response
- * Send HTTPResponse packet data to a particular Client
+ * Send a generic HTTPResponse packet data to a particular Client
  *
  * @param cl Client to send data to
  * @param buf ByteBuffer containing data to be sent
  * @param disconnect Should the server disconnect the client after sending (Optional, default = false)
  */
 void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
+	// Server Header
+	res->addHeader("Server", "httpserver/1.0");
+	
 	// Time stamp the response with the Date header
 	string tstr;
 	char tbuf[36];
@@ -429,6 +453,10 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 	}
 	
 	cout << "[" << cl->getClientIP() << "] was sent " << totalSent << " bytes" << endl;
+	for(unsigned int i = 0; i < totalSent; i++) {
+		cout << pData[i];
+	}
+	cout << endl;
 	
 	if(disconnect)
 		disconnectClient(cl);

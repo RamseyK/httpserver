@@ -44,15 +44,16 @@ class HTTPServer {
     // Private methods
     void acceptConnection();
 	Client *getClient(SOCKET clfd);
-    void disconnectClient(Client* cl);
+	void closeSockets();
+    void disconnectClient(Client* cl, bool mapErase = true);
     void handleClient(Client* cl);
+	void sendStatusResponse(Client* cl, int status);
 	void sendResponse(Client* cl, HTTPResponse* res, bool disconnect = false);
     
     // Request handlers
     void handleRequest(Client* cl, HTTPRequest* req);
-    HTTPResponse* handleHead(Client* cl, HTTPRequest *req);
-    HTTPResponse* handleGet(Client* cl, HTTPRequest *req);
-    void closeSockets();
+    void handleHead(Client* cl, HTTPRequest *req);
+    void handleGet(Client* cl, HTTPRequest *req);
     
 public:
     HTTPServer();
