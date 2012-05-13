@@ -1,13 +1,12 @@
 Yet Another HTTP Server
-=======================
 Ramsey Kant
 
-General Notes
------------------
+https://github.com/RamseyK
 
-Tested Platforms
------------------
-* GNU/Linux
-* OSX
-* Cygwin
-* Win32
+A simple HTTP server for *nix that uses my HTTP parsing classes from ByteBuffer. I will eventually move from select() to epoll() in order to demonstrate better socket management techniques.
+
+Dependencies:
+Boost Threads
+
+License:
+See LICENSE.TXT
