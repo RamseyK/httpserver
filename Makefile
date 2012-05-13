@@ -8,10 +8,11 @@ DEBUGFLAGS = -g -O0 -fpermissive -Wall
 # Production Flags
 PRODFLAGS = -Wall -O3
 # Active Flags
-FLAGS = $(DEBUGFLAGS)
+FLAGS = -Iinclude/ $(DEBUGFLAGS)
+LINK = -lpthread -lboost_thread-mt
 
 all: $(OBJS)
-	$(CC) $(FLAGS) *.o -o bin/httpserver
+	$(CC) $(FLAGS) *.o -o bin/httpserver $(LINK)
 
 ByteBuffer.o: ByteBuffer.cpp
 	$(CC) $(FLAGS) -c ByteBuffer.cpp -o $@
@@ -43,5 +44,5 @@ ResourceManager.o: ResourceManager.cpp
 .PHONY: clean
 clean:
 	rm -f bin/httpserver
-	rm -f bin/*.o
+	rm -f *.o
 

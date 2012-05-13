@@ -5,9 +5,11 @@
  * Initialize state and server variables
  */
 HTTPServer::HTTPServer() {
+	canRun = false;
+	thread = NULL;
+	
     listenSocket = INVALID_SOCKET;
     memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
-    keepRunning = false;
 
 	// Create a resource manager managing the VIRTUAL base path ./
     resMgr = new ResourceManager("./", true);
@@ -28,22 +30,28 @@ HTTPServer::~HTTPServer() {
 	if(listenSocket != INVALID_SOCKET)
     	closeSockets();
     delete clientMap;
+
+	if(thread != NULL)
+		delete thread;
 }
 
 /**
- * Init Socket
+ * Start Server
  * Initialize the Server Socket by requesting a socket handle, binding, and going into a listening state
  *
  * @param port Port to listen on
  * @return True if initialization succeeded. False if otherwise
  */
-bool HTTPServer::initSocket(int port) {    
+void HTTPServer::start(int port) {    
 	// Create a handle for the listening socket, TCP
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(listenSocket == INVALID_SOCKET) {
 		cout << "Could not create socket!" << endl;
-        return false;
+		return;
 	}
+	
+	// Set socket as non blocking
+	fcntl(listenSocket, F_SETFL, O_NONBLOCK);
     
 	// Populate the server address structure
 	serverAddr.sin_family = AF_INET; // Family: IP protocol
@@ -53,23 +61,47 @@ bool HTTPServer::initSocket(int port) {
 	// Bind: Assign the address to the socket
 	if(bind(listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
 		cout << "Failed to bind to the address!" << endl;
-        return false;
+		return;
 	}
     
 	// Listen: Put the socket in a listening state, ready to accept connections
 	// Accept a backlog of the OS Maximum connections in the queue
 	if(listen(listenSocket, SOMAXCONN) != 0) {
 		cout << "Failed to put the socket in a listening state" << endl;
-        return false;
+		return;
 	}
     
     // Add the listening socket to the master set and the largest FD is now the listening socket
     FD_SET(listenSocket, &fd_master);
     fdmax = listenSocket;
 
-	keepRunning = true;
+	// Set select to timeout at 50 microseconds
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 50;
 
-    return true;
+	cout << "Server started. Listening on port " << port << "..." << endl;
+
+	// Spawn thread
+	canRun = true;
+	thread = new boost::thread(boost::ref(*this));
+}
+
+/**
+ * Stop
+ * Signal the server thread to stop running and shut down
+ */
+void HTTPServer::stop() {
+	runMutex.lock();
+	canRun = false;
+	runMutex.unlock();
+	
+	if(thread != NULL)
+		thread->join();
+
+    // Safely shutdown the server and close all open connections and sockets
+    closeSockets();
+
+	cout << "Server shutdown!" << endl;
 }
 
 /**
@@ -107,6 +139,9 @@ void HTTPServer::acceptConnection() {
     clfd = accept(listenSocket, (sockaddr*)&clientAddr, (socklen_t*)&clientAddrLen);
     if(clfd == INVALID_SOCKET)
         return;
+
+	// Set socket as non blocking
+	fcntl(clfd, F_SETFL, O_NONBLOCK);
     
     // Instance Client object
     Client *cl = new Client(clfd, clientAddr);
@@ -126,50 +161,49 @@ void HTTPServer::acceptConnection() {
 }
 
 /**
- * Run Server
- * Main server loop where the socket is initialized and the loop is started, checking for new messages or clients to be read with select()
- * and handling them appropriately
+ * Server Process
+ * Main server processing function that checks for any new connections or data to read on
+ * the listening socket
  */
-void HTTPServer::runServer(int port) {
-    // Initialize the socket and put it into a listening state
-    if(!initSocket(port)) {
-		cout << "Failed to start server." << endl;
-        return;
-    }
-
-	cout << "Server started. Listening on port " << port << "..." << endl;
-    
-    // Processing loop
-    while(keepRunning) {
-		usleep(1000);
+void HTTPServer::operator() () {
+	bool run = true;
+	int sret = 0;
+	
+	while(run) {
+		// Update the running state
+		runMutex.lock();
+		run = canRun;
+		runMutex.unlock();
 		
-        // Copy master set into fd_read for processing
-        fd_read = fd_master;
-        
-        // Populate read_fd set with client descriptors that are ready to be read
-        if(select(fdmax+1, &fd_read, NULL, NULL, NULL) < 0) {
-            //printf("select failed!");
-            continue;
-        }
-        
-        // Loop through all descriptors in the read_fd set and check to see if data needs to be processed
-        for(int i = 0; i <= fdmax; i++) {
-            // Socket i isn't ready to be read (not in the read set), continue
-            if(!FD_ISSET(i, &fd_read))
-               continue;
-            
-            // A new client is waiting to be accepted on the listenSocket
-            if(listenSocket == i) {
-                acceptConnection();
-            } else { // The descriptor is a client
-                Client *cl = getClient(i);
-                handleClient(cl);
-            }
-        }
-    }
-    
-    // Safely shutdown the server and close all open connections and sockets
-    closeSockets();
+		// Copy master set into fd_read for processing
+		fd_read = fd_master;
+
+		// Populate read_fd set with client descriptors that are ready to be read
+		// return values: -1 = unsuccessful, 0 = timeout, > 0 - # of sockets that need to be read
+		sret = select(fdmax+1, &fd_read, NULL, NULL, &timeout);
+		if(sret > 0) {
+			// Loop through all descriptors in the read_fd set and check to see if data needs to be processed
+			for(int i = 0; i <= fdmax; i++) {
+				// Socket i isn't ready to be read (not in the read set), continue
+				if(!FD_ISSET(i, &fd_read))
+					continue;
+
+				// A new client is waiting to be accepted on the listenSocket
+				if(listenSocket == i) {
+					acceptConnection();
+				} else { // The descriptor is a client
+					Client *cl = getClient(i);
+					handleClient(cl);
+				}
+			}
+		} else if(sret < 0) {
+			cout << "Select failed!" << endl;
+			break;
+		} else { // Timeout
+			// Yield rest of time slice to CPU
+			boost::this_thread::yield();
+		}
+	}
 }
 
 /**

@@ -1,11 +1,9 @@
 #include <iostream>
+#include <string>
 #include <signal.h>
 
 #include "HTTPServer.h"
 #include "Testers.h"
-
-void handleSigPipe(int snum);
-void handleSigQuit(int snum);
 
 HTTPServer* svr;
 
@@ -14,9 +12,11 @@ void handleSigPipe(int snum) {
     return;
 }
 
-void handleSigQuit(int snum) {
-	if(svr != NULL)
-		svr->stopServer();
+// Termination signal handler
+void handleTermSig(int snum) {
+	svr->stop();
+	delete svr;
+	exit(0);
 }
 
 int main (int argc, const char * argv[])
@@ -24,17 +24,32 @@ int main (int argc, const char * argv[])
     // Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
     signal(SIGPIPE, handleSigPipe);
 
-	// Register termination signals to stop the server
-	signal(SIGABRT, &handleSigQuit);
-	signal(SIGINT, &handleSigQuit);
-	signal(SIGTERM, &handleSigQuit);
+	// Register termination signals
+	signal(SIGABRT, &handleTermSig);
+	signal(SIGINT, &handleTermSig);
+	signal(SIGTERM, &handleTermSig);
 
     // Instance and start the server
 	svr = new HTTPServer();
-	svr->runServer(8080);
+	svr->start(8080);
+	
+	// Input loop
+	std::string input;
+	while(true) {
+		cin >> input;
+		
+		if(input == "quit") {
+			break;
+		} else if(input == "help") {
+			cout << "come back jack!" << endl;
+		} else {
+			cout << "Unknown command: " << input << endl;
+		}
+	}
+	
+	// Stop the server thread
+	svr->stop();
 	delete svr;
-
-    //testAll();
     
     return 0;
 }
