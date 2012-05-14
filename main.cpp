@@ -50,18 +50,6 @@ int main (int argc, const char * argv[])
 	svr = new HTTPServer();
 	svr->start(8080);
 	
-	// Input loop
-	std::string input;
-	while(true) {
-		cin >> input;
-		
-		if(input == "quit") {
-			break;
-		} else {
-			cout << "Unknown command: " << input << endl;
-		}
-	}
-	
 	// Stop the server thread
 	svr->stop();
 	delete svr;

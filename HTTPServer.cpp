@@ -24,7 +24,6 @@
  */
 HTTPServer::HTTPServer() {
 	canRun = false;
-	thread = NULL;
 	
     listenSocket = INVALID_SOCKET;
     memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
@@ -48,9 +47,6 @@ HTTPServer::~HTTPServer() {
 	if(listenSocket != INVALID_SOCKET)
     	closeSockets();
     delete clientMap;
-
-	if(thread != NULL)
-		delete thread;
 }
 
 /**
@@ -77,7 +73,7 @@ void HTTPServer::start(int port) {
 	serverAddr.sin_addr.s_addr = INADDR_ANY; // Let OS intelligently select the server's host address
     
 	// Bind: Assign the address to the socket
-	if(bind(listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
+	if(bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
 		cout << "Failed to bind to the address!" << endl;
 		return;
 	}
@@ -99,9 +95,9 @@ void HTTPServer::start(int port) {
 
 	cout << "Server started. Listening on port " << port << "..." << endl;
 
-	// Spawn thread
+	// Start processing
 	canRun = true;
-	thread = new boost::thread(boost::ref(*this));
+	process();
 }
 
 /**
@@ -109,12 +105,7 @@ void HTTPServer::start(int port) {
  * Signal the server thread to stop running and shut down
  */
 void HTTPServer::stop() {
-	runMutex.lock();
 	canRun = false;
-	runMutex.unlock();
-	
-	if(thread != NULL)
-		thread->join();
 
     // Safely shutdown the server and close all open connections and sockets
     closeSockets();
@@ -183,16 +174,10 @@ void HTTPServer::acceptConnection() {
  * Main server processing function that checks for any new connections or data to read on
  * the listening socket
  */
-void HTTPServer::operator() () {
-	bool run = true;
+void HTTPServer::process() {
 	int sret = 0;
 	
-	while(run) {
-		// Update the running state
-		runMutex.lock();
-		run = canRun;
-		runMutex.unlock();
-		
+	while(canRun) {
 		// Copy master set into fd_read for processing
 		fd_read = fd_master;
 
@@ -218,8 +203,7 @@ void HTTPServer::operator() () {
 			cout << "Select failed!" << endl;
 			break;
 		} else { // Timeout
-			// Yield rest of time slice to CPU
-			boost::this_thread::yield();
+			usleep(100);
 		}
 	}
 }

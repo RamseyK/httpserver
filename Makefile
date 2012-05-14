@@ -4,15 +4,15 @@
 CC = g++
 OBJS = ByteBuffer.o Client.o HTTPMessage.o HTTPRequest.o HTTPResponse.o HTTPServer.o  main.o Resource.o ResourceManager.o
 # Debug Flags
-DEBUGFLAGS = -g -O0 -fpermissive -Wall
+DEBUGFLAGS = -g -O0 -Wall
 # Production Flags
 PRODFLAGS = -Wall -O3
 # Active Flags
 FLAGS = -Iinclude/ $(DEBUGFLAGS)
-LINK = -lpthread -lboost_thread-mt
+# LINK = -lpthread -lboost_thread-mt
 
 all: $(OBJS)
-	$(CC) $(FLAGS) *.o -o bin/httpserver $(LINK)
+	$(CC) $(FLAGS) *.o -o bin/httpserver
 
 ByteBuffer.o: ByteBuffer.cpp
 	$(CC) $(FLAGS) -c ByteBuffer.cpp -o $@

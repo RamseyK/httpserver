@@ -21,7 +21,6 @@
 
 #include <map>
 #include <string>
-#include <boost/thread.hpp>
 
 #include <time.h>
 #include <unistd.h>
@@ -42,6 +41,8 @@
 #define INVALID_SOCKET -1
 
 class HTTPServer {
+	bool canRun;
+	
 	// Network
     SOCKET listenSocket; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
@@ -53,13 +54,9 @@ class HTTPServer {
 
 	// Resources / File System
 	ResourceManager *resMgr;
-	
-	// Threading
-	bool canRun;
-	boost::thread* thread;
-	boost::mutex runMutex;
     
     // Private methods
+	void process();
     void acceptConnection();
 	Client *getClient(SOCKET clfd);
 	void closeSockets();
@@ -79,7 +76,6 @@ public:
 
 	void start(int port);
 	void stop();
-	void operator() ();
 };
 
 #endif
