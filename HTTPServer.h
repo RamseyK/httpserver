@@ -23,7 +23,7 @@
 #include <string>
 
 #include <time.h>
-#include <unistd.h>
+#include <sys/event.h> // kqueue
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -39,6 +39,7 @@
 
 #define SOCKET int
 #define INVALID_SOCKET -1
+#define QUEUE_SIZE 1024
 
 class HTTPServer {
 	bool canRun;
@@ -46,10 +47,8 @@ class HTTPServer {
 	// Network
     SOCKET listenSocket; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
-    fd_set fd_master; // Master FD set (listening socket + client sockets)
-    fd_set fd_read; // FD set of sockets being read / operated on
-	struct timeval timeout; // Select timeout
-    int fdmax; // Max FD number (max sockets hanlde)
+	int kqfd; // kqueue descriptor
+	struct kevent evlist[QUEUE_SIZE]; // Events that have changed (max QUEUE_SIZE at a time)
     map<SOCKET, Client*> *clientMap; // Client map, maps Socket descriptor to Client object
 
 	// Resources / File System

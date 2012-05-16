@@ -33,10 +33,6 @@ HTTPServer::HTTPServer() {
     
     // Instance clientMap, relates Socket Descriptor to pointer to Client object
     clientMap = new map<SOCKET, Client*>();
-    
-    // Zero the file descriptor sets
-    FD_ZERO(&fd_master);
-    FD_ZERO(&fd_read);
 }
 
 /**
@@ -85,13 +81,17 @@ void HTTPServer::start(int port) {
 		return;
 	}
     
-    // Add the listening socket to the master set and the largest FD is now the listening socket
-    FD_SET(listenSocket, &fd_master);
-    fdmax = listenSocket;
-
-	// Set select to timeout at 50 microseconds
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 50;
+	// Setup kqueue
+	kqfd = kqueue();
+	if(kqfd == -1) {
+		cout << "Could not create the kernel event queue!" << endl;
+		return;
+	}
+	
+	// Have kqueue watch the listen socket
+	struct kevent kev;
+	EV_SET(&kev, listenSocket, EVFILT_READ, EV_ADD, 0, 0, NULL); // Fills kev
+	kevent(kqfd, &kev, 1, NULL, 0, NULL);
 
 	cout << "Server started. Listening on port " << port << "..." << endl;
 
@@ -155,12 +155,10 @@ void HTTPServer::acceptConnection() {
     // Instance Client object
     Client *cl = new Client(clfd, clientAddr);
     
-    // Add to the master FD set
-    FD_SET(clfd, &fd_master);
-    
-    // If the new client's handle is greater than the max, set the new max
-    if(clfd > fdmax)
-        fdmax = clfd;
+	// Have kqueue track the new client socket (udata contains pointer to Client object)
+	struct kevent kev;
+	EV_SET(&kev, clfd, EVFILT_READ, EV_ADD, 0, 0, cl); // Fills kev
+	kevent(kqfd, &kev, 1, NULL, 0, NULL);
     
     // Add the client object to the client map
     clientMap->insert(std::pair<int, Client*>(clfd, cl));
@@ -175,35 +173,34 @@ void HTTPServer::acceptConnection() {
  * the listening socket
  */
 void HTTPServer::process() {
-	int sret = 0;
+	int nev = 0; // Number of changed events returned by kevent
+	Client* cl = NULL;
 	
 	while(canRun) {
-		// Copy master set into fd_read for processing
-		fd_read = fd_master;
-
-		// Populate read_fd set with client descriptors that are ready to be read
-		// return values: -1 = unsuccessful, 0 = timeout, > 0 - # of sockets that need to be read
-		sret = select(fdmax+1, &fd_read, NULL, NULL, &timeout);
-		if(sret > 0) {
-			// Loop through all descriptors in the read_fd set and check to see if data needs to be processed
-			for(int i = 0; i <= fdmax; i++) {
-				// Socket i isn't ready to be read (not in the read set), continue
-				if(!FD_ISSET(i, &fd_read))
-					continue;
-
-				// A new client is waiting to be accepted on the listenSocket
-				if(listenSocket == i) {
-					acceptConnection();
-				} else { // The descriptor is a client
-					Client *cl = getClient(i);
-					handleClient(cl);
-				}
-			}
-		} else if(sret < 0) {
-			cout << "Select failed!" << endl;
-			break;
+		// Get a list of changed socket descriptors (if any) in evlist
+		// Timeout is NULL, kevent will wait for a change before returning
+		nev = kevent(kqfd, NULL, 0, evlist, QUEUE_SIZE, NULL);
+		
+		if(nev > 0) {
+	        // Loop through only the sockets that have changed in the evlist array
+	        for(int i = 0; i < nev; i++) {
+	            if(evlist[i].ident == (unsigned int)listenSocket) { // A client is waiting to connect
+	                acceptConnection();
+	            } else { // Client descriptor has triggered an event
+					cl = (Client*)evlist[i].udata;
+					if(evlist[i].flags & EVFILT_READ) {
+	                	handleClient(cl);
+					} else if(evlist[i].flags & EV_EOF) {
+						disconnectClient(cl);
+					} else {
+						// unhandled event
+					}
+	            }
+	        }
+		} else if(nev < 0) {
+			cout << "kevent failed!" << endl; // should call errno..
 		} else { // Timeout
-			usleep(100);
+			//usleep(100);
 		}
 	}
 }
@@ -239,11 +236,8 @@ void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
     if(cl == NULL)
         return;
     
-    // Close the socket descriptor
+    // Close the socket descriptor (which will also remove from kqueue's event list on the next kevent call)
     close(cl->getSocket());
-    
-    // Remove the client from the master FD map
-    FD_CLR(cl->getSocket(), &fd_master);
     
     // Remove the client from the clientMap
 	if(mapErase)

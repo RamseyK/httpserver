@@ -1,12 +1,20 @@
-Yet Another HTTP Server
+HTTP Server
 Ramsey Kant
 
 https://github.com/RamseyK
 
-A simple HTTP server for *nix that uses my HTTP parsing classes from ByteBuffer. I will eventually move from select() to epoll() in order to demonstrate better socket management techniques.
+I am writing this HTTP server as a learning tool with a focus on performance.
 
-Dependencies:
-Boost Threads
+Features:
+-Clean, documented code
+-Efficient socket management with kqueue
+-Easy to understand HTTP protocol parser (from my ByteBuffer project)
+-Runs on Linux*, FreeBSD, OS X
+
+* When compiling on Linux, you must link with pthreads & libkqueue
+
+Benchmarks:
+Coming soon!
 
 License:
 See LICENSE.TXT
