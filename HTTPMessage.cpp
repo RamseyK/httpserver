@@ -283,6 +283,19 @@ void HTTPMessage::addHeader(string key, string value) {
 }
 
 /**
+ * Add header key-value pair to the map (Integer value)
+ * Integer value is converted to a string
+ * 
+ * @param key String representation of the Header Key
+ * @param value Integer representation of the Header value
+ */
+void HTTPMessage::addHeader(string key, int value) {
+	stringstream sz;
+	sz << value;
+    headers->insert(pair<string, string>(key, sz.str()));
+}
+
+/**
  * Get Header Value
  * Given a header name (key), return the value associated with it in the headers map
  *

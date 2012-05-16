@@ -82,7 +82,7 @@ void HTTPResponse::determineReasonStr() {
             reason = "Internal Server Error";
             break;
         case Status(NOT_IMPLEMENTED):
-            reason = "Method not implemented";
+            reason = "Not Implemented";
             break;
         default:
             break;

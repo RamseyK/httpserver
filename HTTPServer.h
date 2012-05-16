@@ -61,13 +61,15 @@ class HTTPServer {
 	void closeSockets();
     void disconnectClient(Client* cl, bool mapErase = true);
     void handleClient(Client* cl);
-	void sendStatusResponse(Client* cl, int status);
+	void sendStatusResponse(Client* cl, int status, std::string msg = "");
 	void sendResponse(Client* cl, HTTPResponse* res, bool disconnect = false);
     
     // Request handlers
     void handleRequest(Client* cl, HTTPRequest* req);
-    void handleHead(Client* cl, HTTPRequest *req);
-    void handleGet(Client* cl, HTTPRequest *req);
+	void handleGet(Client* cl, HTTPRequest* req);
+    void handleHead(Client* cl, HTTPRequest* req);
+	void handleOptions(Client* cl, HTTPRequest* req);
+	void handleTrace(Client* cl, HTTPRequest* req);
     
 public:
     HTTPServer();

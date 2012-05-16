@@ -303,7 +303,7 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
     if(!req->parse()) {
 		cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << endl;
 		cout << req->getParseError() << endl;
-		sendStatusResponse(cl, Status(SERVER_ERROR));
+		sendStatusResponse(cl, Status(SERVER_ERROR), req->getParseError());
 		return;
     }
     
@@ -315,6 +315,12 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
         case Method(GET):
             handleGet(cl, req);
             break;
+		case Method(OPTIONS):
+			handleOptions(cl, req);
+			break;
+		case Method(TRACE):
+			handleTrace(cl, req);
+			break;
         default:
 			cout << cl->getClientIP() << ": Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << endl;
 			sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
@@ -336,10 +342,8 @@ void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
 	if(r != NULL) { // Exists
 		HTTPResponse* res = new HTTPResponse();
 		res->setStatus(Status(OK));
-		std::stringstream sz;
-		sz << r->getSize();
 		res->addHeader("Content-Type", "text/html");
-		res->addHeader("Content-Length", sz.str());
+		res->addHeader("Content-Length", r->getSize());
 		res->setData(r->getData(), r->getSize());
 		sendResponse(cl, res, true);
 		delete res;
@@ -350,7 +354,8 @@ void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
 
 /**
  * Handle Head
- * Process a HEAD request to provide the client with an appropriate response
+ * Process a HEAD request
+ * HEAD: Return the corresponding headers for a resource, but not the acutal resource itself (in the body)
  *
  * @param cl Client requesting the resource
  * @param req State of the request
@@ -363,15 +368,59 @@ void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
 		// Only include headers associated with the file. NEVER contains a body
 		HTTPResponse* res = new HTTPResponse();
 		res->setStatus(Status(OK));
-		std::stringstream sz;
-		sz << r->getSize();
 		res->addHeader("Content-Type", "text/html");
-		res->addHeader("Content-Length", sz.str());
+		res->addHeader("Content-Length", r->getSize());
 		sendResponse(cl, res, true);
 		delete res;
 	} else { // Not found
 		sendStatusResponse(cl, Status(NOT_FOUND));
 	}
+}
+
+/**
+ * Handle Options
+ * Process a OPTIONS request
+ * OPTIONS: Return allowed capabilties for the server (*) or a particular resource
+ *
+ * @param cl Client requesting the resource
+ * @param req State of the request
+ */
+void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
+	// For now, we'll always return the capabilities of the server instead of figuring it out for each resource
+	std::string allow = "HEAD GET OPTIONS TRACE";
+	HTTPResponse* res = new HTTPResponse();
+	res->setStatus(Status(OK));
+	res->addHeader("Allow", allow.c_str());
+	res->addHeader("Content-Length", "0"); // Required
+	sendResponse(cl, res, true);
+	delete res;
+}
+
+/**
+ * Handle Trace
+ * Process a TRACE request
+ * TRACE: send back the request as received by the server verbatim
+ *
+ * @param cl Client requesting the resource
+ * @param req State of the request
+ */
+void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
+	// Get a byte array representation of the request
+	unsigned int len = req->size();
+	byte* buf = new byte[len];
+	req->setReadPos(0); // Set the read position at the beginning since the request has already been read to the end
+	req->getBytes(buf, len);
+	
+	// Send a response with the entire request as the body
+	HTTPResponse* res = new HTTPResponse();
+	res->setStatus(Status(OK));
+	res->addHeader("Content-Type", "text/plain");
+	res->addHeader("Content-Length", len);
+	res->setData(buf, len);
+	sendResponse(cl, res, true);
+	
+	delete res;
+	delete buf;
 }
 
 /**
@@ -381,15 +430,14 @@ void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
  *
  * @param cl Client to send the status code to
  * @param status Status code corresponding to the enum in HTTPMessage.h
+ * @param msg An additional message to append to the body text
  */
-void HTTPServer::sendStatusResponse(Client* cl, int status) {
+void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
 	HTTPResponse* res = new HTTPResponse();
 	res->setStatus(Status(status));
-	std::string body = res->getReason();
-	std::stringstream sz;
-	sz << body.size();
-	res->addHeader("Content-Type", "text/html");
-	res->addHeader("Content-Length", sz.str());
+	std::string body = res->getReason() + " " + msg;
+	res->addHeader("Content-Type", "text/plain");
+	res->addHeader("Content-Length", body.size());
 	res->setData((byte*)body.c_str(), body.size());
 	
 	sendResponse(cl, res, true);
