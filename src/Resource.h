@@ -30,11 +30,12 @@ private:
 	unsigned int size;
     std::string encoding;
     std::string language;
-    std::string location; // Resource location within the server
+    std::string location; // Disk path location within the server
     std::string md5;
+	bool directory;
 
 public:
-    Resource(std::string loc);
+    Resource(std::string loc, bool dir = false);
     ~Resource();
     
     // Setters
@@ -57,6 +58,10 @@ public:
     std::string getLocation() {
         return location;
     }
+
+	bool isDirectory() {
+		return directory;
+	}
 
 	byte* getData() {
 		return data;

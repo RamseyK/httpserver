@@ -18,8 +18,9 @@
 
 #include "Resource.h"
 
-Resource::Resource(std::string loc) {
+Resource::Resource(std::string loc, bool dir) {
 	location = loc;
+	directory = dir;
 	encoding = "";
 	language = "";
 	md5 = "";

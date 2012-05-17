@@ -1,8 +1,8 @@
 # Makefile for httpserver
 # (C) Ramsey Kant 2011-2012
 
-CC = g++
-OBJS = ByteBuffer.o Client.o HTTPMessage.o HTTPRequest.o HTTPResponse.o HTTPServer.o  main.o Resource.o ResourceManager.o
+CC = clang++
+OBJS = ByteBuffer.o Client.o HTTPMessage.o HTTPRequest.o HTTPResponse.o HTTPServer.o  main.o Resource.o ResourceHost.o
 # Debug Flags
 DEBUGFLAGS = -g -O0 -Wall
 # Production Flags
@@ -12,37 +12,37 @@ FLAGS = -Iinclude/ $(DEBUGFLAGS)
 # LINK = -lpthread -lboost_thread-mt
 
 all: $(OBJS)
-	$(CC) $(FLAGS) *.o -o bin/httpserver
+	$(CC) $(FLAGS) src/*.o -o bin/httpserver
 
-ByteBuffer.o: ByteBuffer.cpp
-	$(CC) $(FLAGS) -c ByteBuffer.cpp -o $@
+ByteBuffer.o: src/ByteBuffer.cpp
+	$(CC) $(FLAGS) -c src/ByteBuffer.cpp -o src/$@
 
-Client.o: Client.cpp
-	$(CC) $(FLAGS) -c Client.cpp -o $@
+Client.o: src/Client.cpp
+	$(CC) $(FLAGS) -c src/Client.cpp -o src/$@
 
-HTTPMessage.o: HTTPMessage.cpp
-	$(CC) $(FLAGS) -c HTTPMessage.cpp -o $@
+HTTPMessage.o: src/HTTPMessage.cpp
+	$(CC) $(FLAGS) -c src/HTTPMessage.cpp -o src/$@
 
-HTTPRequest.o: HTTPRequest.cpp
-	$(CC) $(FLAGS) -c HTTPRequest.cpp -o $@
+HTTPRequest.o: src/HTTPRequest.cpp
+	$(CC) $(FLAGS) -c src/HTTPRequest.cpp -o src/$@
 
-HTTPResponse.o: HTTPResponse.cpp
-	$(CC) $(FLAGS) -c HTTPResponse.cpp -o $@
+HTTPResponse.o: src/HTTPResponse.cpp
+	$(CC) $(FLAGS) -c src/HTTPResponse.cpp -o src/$@
 
-HTTPServer.o: HTTPServer.cpp
-	$(CC) $(FLAGS) -c HTTPServer.cpp -o $@
+HTTPServer.o: src/HTTPServer.cpp
+	$(CC) $(FLAGS) -c src/HTTPServer.cpp -o src/$@
 
-main.o: main.cpp
-	$(CC) $(FLAGS) -c main.cpp -o $@
+main.o: src/main.cpp
+	$(CC) $(FLAGS) -c src/main.cpp -o src/$@
 
-Resource.o: Resource.cpp
-	$(CC) $(FLAGS) -c Resource.cpp -o $@
+Resource.o: src/Resource.cpp
+	$(CC) $(FLAGS) -c src/Resource.cpp -o src/$@
 
-ResourceManager.o: ResourceManager.cpp
-	$(CC) $(FLAGS) -c ResourceManager.cpp -o $@
+ResourceHost.o: src/ResourceHost.cpp
+	$(CC) $(FLAGS) -c src/ResourceHost.cpp -o src/$@
 
 .PHONY: clean
 clean:
 	rm -f bin/httpserver
-	rm -f *.o
+	rm -f src/*.o
 

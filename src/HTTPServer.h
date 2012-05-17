@@ -20,6 +20,7 @@
 #define _HTTPSERVER_H
 
 #include <map>
+#include <list>
 #include <string>
 
 #include <time.h>
@@ -35,7 +36,7 @@
 #include "Client.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
-#include "ResourceManager.h"
+#include "ResourceHost.h"
 
 #define SOCKET int
 #define INVALID_SOCKET -1
@@ -49,10 +50,11 @@ class HTTPServer {
     struct sockaddr_in serverAddr; // Structure for the server address
 	int kqfd; // kqueue descriptor
 	struct kevent evlist[QUEUE_SIZE]; // Events that have changed (max QUEUE_SIZE at a time)
-    map<SOCKET, Client*> *clientMap; // Client map, maps Socket descriptor to Client object
+    std::map<SOCKET, Client*> clientMap; // Client map, maps Socket descriptor to Client object
 
 	// Resources / File System
-	ResourceManager *resMgr;
+	std::list<ResourceHost*> hostList; // Contains all ResourceHosts
+	std::map<string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
     
     // Private methods
 	void process();

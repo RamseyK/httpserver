@@ -28,11 +28,13 @@ HTTPServer::HTTPServer() {
     listenSocket = INVALID_SOCKET;
     memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
 
-	// Create a resource manager managing the VIRTUAL base path ./
-    resMgr = new ResourceManager("./htdocs/");
-    
-    // Instance clientMap, relates Socket Descriptor to pointer to Client object
-    clientMap = new map<SOCKET, Client*>();
+	// Create a resource host serving the base path ./htdocs on disk
+    ResourceHost* resHost = new ResourceHost("./htdocs");
+	hostList.push_back(resHost);
+
+	// Setup the resource host serving htdocs to provide for the following vhosts:
+	vhosts.insert(std::pair<string, ResourceHost*>("127.0.0.1:8080", resHost));
+	vhosts.insert(std::pair<string, ResourceHost*>("192.168.1.59:8080", resHost));
 }
 
 /**
@@ -42,7 +44,13 @@ HTTPServer::HTTPServer() {
 HTTPServer::~HTTPServer() {
 	if(listenSocket != INVALID_SOCKET)
     	closeSockets();
-    delete clientMap;
+
+	// Loop through hostList and delete all ResourceHosts
+	while(!hostList.empty()) {
+		delete hostList.back();
+		hostList.pop_back();
+	}
+	vhosts.clear();
 }
 
 /**
@@ -120,13 +128,13 @@ void HTTPServer::stop() {
 void HTTPServer::closeSockets() {
     // Close all open connections and delete Client's from memory
     std::map<int, Client*>::const_iterator it;
-    for(it = clientMap->begin(); it != clientMap->end(); ++it) {
+    for(it = clientMap.begin(); it != clientMap.end(); ++it) {
         Client *cl = it->second;
         disconnectClient(cl, false);
     }
     
     // Clear the map
-    clientMap->clear();
+    clientMap.clear();
     
     // Shudown the listening socket and release it to the OS
 	shutdown(listenSocket, SHUT_RDWR);
@@ -161,7 +169,7 @@ void HTTPServer::acceptConnection() {
 	kevent(kqfd, &kev, 1, NULL, 0, NULL);
     
     // Add the client object to the client map
-    clientMap->insert(std::pair<int, Client*>(clfd, cl));
+    clientMap.insert(std::pair<int, Client*>(clfd, cl));
     
     // Print the client's IP on connect
 	cout << "[" << cl->getClientIP() << "] connected" << endl;
@@ -214,10 +222,10 @@ void HTTPServer::process() {
  */
 Client* HTTPServer::getClient(SOCKET clfd) {
 	std::map<int, Client*>::const_iterator it;
-    it = clientMap->find(clfd);
+    it = clientMap.find(clfd);
 
 	// Client wasn't found
-	if(it == clientMap->end())
+	if(it == clientMap.end())
 		return NULL;
 
     // Return a pointer to the client object
@@ -241,7 +249,7 @@ void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
     
     // Remove the client from the clientMap
 	if(mapErase)
-    	clientMap->erase(cl->getSocket());
+    	clientMap.erase(cl->getSocket());
     
     // Delete the client object from memory
     delete cl;
@@ -279,6 +287,10 @@ void HTTPServer::handleClient(Client *cl) {
     } else {
 		// Data received
 		cout << "[" << cl->getClientIP() << "] " << lenRecv << " bytes received" << endl;
+		for(unsigned int i = 0; i < lenRecv; i++) {
+			cout << pData[i];
+		}
+		cout << endl;
         
         // Place the data in an HTTPRequest and pass it to handleRequest for processing
 		req = new HTTPRequest((byte*)pData, lenRecv);
@@ -303,7 +315,7 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
     if(!req->parse()) {
 		cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << endl;
 		cout << req->getParseError() << endl;
-		sendStatusResponse(cl, Status(SERVER_ERROR), req->getParseError());
+		sendStatusResponse(cl, Status(BAD_REQUEST), req->getParseError());
 		return;
     }
     
@@ -336,16 +348,32 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
  * @param req State of the request
  */
 void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
+	cout << "GET for: " << req->getRequestUri() << endl;
+	/*cout << "Headers:" << endl;
+	for(int i = 0; i < req->getNumHeaders(); i++) {
+		cout << req->getHeaderStr(i) << endl;
+	}
+	cout << endl;*/
+	
+	// Retrieve the host specified in the request
+	std::string host = req->getHeaderValue("Host");
+	ResourceHost* resHost = vhosts.find(host)->second;
+	// Invalid Host specified by client:
+	if(resHost == NULL) {
+		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
+		return;
+	}
+	
 	// Check if the requested resource exists
 	std::string uri = req->getRequestUri();
-    Resource* r = resMgr->getResource(uri);
+    Resource* r = resHost->getResource(uri);
 	if(r != NULL) { // Exists
 		HTTPResponse* res = new HTTPResponse();
 		res->setStatus(Status(OK));
 		res->addHeader("Content-Type", "text/html");
 		res->addHeader("Content-Length", r->getSize());
 		res->setData(r->getData(), r->getSize());
-		sendResponse(cl, res, true);
+		sendResponse(cl, res);
 		delete res;
 	} else { // Not found
 		sendStatusResponse(cl, Status(NOT_FOUND));
@@ -361,16 +389,25 @@ void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
  * @param req State of the request
  */
 void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
+	// Retrieve the host specified in the request
+	std::string host = req->getHeaderValue("Host");
+	ResourceHost* resHost = vhosts.find(host)->second;
+	// Invalid Host specified by client:
+	if(resHost == NULL) {
+		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid Host specified: " + host);
+		return;
+	}
+	
 	// Check if the requested resource exists
 	std::string uri = req->getRequestUri();
-    Resource* r = resMgr->getResource(uri);
+    Resource* r = resHost->getResource(uri);
 	if(r != NULL) { // Exists
 		// Only include headers associated with the file. NEVER contains a body
 		HTTPResponse* res = new HTTPResponse();
 		res->setStatus(Status(OK));
 		res->addHeader("Content-Type", "text/html");
 		res->addHeader("Content-Length", r->getSize());
-		sendResponse(cl, res, true);
+		sendResponse(cl, res);
 		delete res;
 	} else { // Not found
 		sendStatusResponse(cl, Status(NOT_FOUND));
@@ -387,7 +424,7 @@ void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
  */
 void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
 	// For now, we'll always return the capabilities of the server instead of figuring it out for each resource
-	std::string allow = "HEAD GET OPTIONS TRACE";
+	std::string allow = "HEAD, GET, OPTIONS, TRACE";
 	HTTPResponse* res = new HTTPResponse();
 	res->setStatus(Status(OK));
 	res->addHeader("Allow", allow.c_str());
@@ -414,7 +451,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
 	// Send a response with the entire request as the body
 	HTTPResponse* res = new HTTPResponse();
 	res->setStatus(Status(OK));
-	res->addHeader("Content-Type", "text/plain");
+	res->addHeader("Content-Type", "message/http");
 	res->addHeader("Content-Length", len);
 	res->setData(buf, len);
 	sendResponse(cl, res, true);
@@ -435,10 +472,16 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
 void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
 	HTTPResponse* res = new HTTPResponse();
 	res->setStatus(Status(status));
+	
+	// Body message: Reason string + additional msg	
 	std::string body = res->getReason() + " " + msg;
+	unsigned int slen = body.length();
+	char* sdata = new char[slen];
+	strncpy(sdata, body.c_str(), slen);
+	
 	res->addHeader("Content-Type", "text/plain");
-	res->addHeader("Content-Length", body.size());
-	res->setData((byte*)body.c_str(), body.size());
+	res->addHeader("Content-Length", slen);
+	res->setData((byte*)sdata, slen);
 	
 	sendResponse(cl, res, true);
 	
@@ -488,7 +531,8 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 		if(n < 0) {
 			cout << "[" << cl->getClientIP() << "] has disconnected." << endl;
 			disconnectClient(cl);
-			break;
+			delete pData;
+			return;
 		}
 
 		// Adjust byte count after a successful send
@@ -504,6 +548,8 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 	
 	if(disconnect)
 		disconnectClient(cl);
+	
+	delete pData;
 }
 
 
