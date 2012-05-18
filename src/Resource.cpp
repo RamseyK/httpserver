@@ -21,6 +21,7 @@
 Resource::Resource(std::string loc, bool dir) {
 	location = loc;
 	directory = dir;
+	mimeType = "";
 	encoding = "";
 	language = "";
 	md5 = "";
@@ -31,4 +32,14 @@ Resource::Resource(std::string loc, bool dir) {
 Resource::~Resource() {
 	if(data != NULL)
 		delete data;
+}
+
+void Resource::guessMimeType() {
+	// Get the file extension
+	std::string ext = "";
+	size_t ext_pos = location.find_last_of(".");
+	if(ext_pos != std::string::npos)
+		ext = location.substr(ext_pos);
+		
+	// Lookup extension and match to known mime types
 }

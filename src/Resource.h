@@ -20,6 +20,7 @@
 #define _RESOURCE_H
 
 #include <string>
+#include <unordered_map> // for mime lookup table loaded from file at startup ...maybe put in resourcemanager
 
 typedef unsigned char byte;
 
@@ -28,6 +29,7 @@ class Resource {
 private:
     byte* data; // File data
 	unsigned int size;
+	std::string mimeType;
     std::string encoding;
     std::string language;
     std::string location; // Disk path location within the server
@@ -37,6 +39,8 @@ private:
 public:
     Resource(std::string loc, bool dir = false);
     ~Resource();
+
+	void guessMimeType();
     
     // Setters
     
@@ -46,6 +50,10 @@ public:
     }
     
     // Getters
+
+	std::string getMimeType() {
+		return mimeType;
+	}
     
     std::string getEncoding() {
         return encoding;

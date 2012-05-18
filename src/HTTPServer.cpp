@@ -33,8 +33,8 @@ HTTPServer::HTTPServer() {
 	hostList.push_back(resHost);
 
 	// Setup the resource host serving htdocs to provide for the following vhosts:
-	vhosts.insert(std::pair<string, ResourceHost*>("127.0.0.1:8080", resHost));
-	vhosts.insert(std::pair<string, ResourceHost*>("192.168.1.59:8080", resHost));
+	vhosts.insert(std::pair<std::string, ResourceHost*>("127.0.0.1:8080", resHost));
+	vhosts.insert(std::pair<std::string, ResourceHost*>("192.168.1.59:8080", resHost));
 }
 
 /**
@@ -64,7 +64,7 @@ void HTTPServer::start(int port) {
 	// Create a handle for the listening socket, TCP
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(listenSocket == INVALID_SOCKET) {
-		cout << "Could not create socket!" << endl;
+		std::cout << "Could not create socket!" << std::endl;
 		return;
 	}
 	
@@ -78,21 +78,21 @@ void HTTPServer::start(int port) {
     
 	// Bind: Assign the address to the socket
 	if(bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
-		cout << "Failed to bind to the address!" << endl;
+		std::cout << "Failed to bind to the address!" << std::endl;
 		return;
 	}
     
 	// Listen: Put the socket in a listening state, ready to accept connections
 	// Accept a backlog of the OS Maximum connections in the queue
 	if(listen(listenSocket, SOMAXCONN) != 0) {
-		cout << "Failed to put the socket in a listening state" << endl;
+		std::cout << "Failed to put the socket in a listening state" << std::endl;
 		return;
 	}
     
 	// Setup kqueue
 	kqfd = kqueue();
 	if(kqfd == -1) {
-		cout << "Could not create the kernel event queue!" << endl;
+		std::cout << "Could not create the kernel event queue!" << std::endl;
 		return;
 	}
 	
@@ -101,7 +101,7 @@ void HTTPServer::start(int port) {
 	EV_SET(&kev, listenSocket, EVFILT_READ, EV_ADD, 0, 0, NULL); // Fills kev
 	kevent(kqfd, &kev, 1, NULL, 0, NULL);
 
-	cout << "Server started. Listening on port " << port << "..." << endl;
+	std::cout << "Server started. Listening on port " << port << "..." << std::endl;
 
 	// Start processing
 	canRun = true;
@@ -118,7 +118,7 @@ void HTTPServer::stop() {
     // Safely shutdown the server and close all open connections and sockets
     closeSockets();
 
-	cout << "Server shutdown!" << endl;
+	std::cout << "Server shutdown!" << std::endl;
 }
 
 /**
@@ -127,7 +127,7 @@ void HTTPServer::stop() {
  */
 void HTTPServer::closeSockets() {
     // Close all open connections and delete Client's from memory
-    std::map<int, Client*>::const_iterator it;
+    std::unordered_map<int, Client*>::const_iterator it;
     for(it = clientMap.begin(); it != clientMap.end(); ++it) {
         Client *cl = it->second;
         disconnectClient(cl, false);
@@ -172,7 +172,7 @@ void HTTPServer::acceptConnection() {
     clientMap.insert(std::pair<int, Client*>(clfd, cl));
     
     // Print the client's IP on connect
-	cout << "[" << cl->getClientIP() << "] connected" << endl;
+	std::cout << "[" << cl->getClientIP() << "] connected" << std::endl;
 }
 
 /**
@@ -206,7 +206,7 @@ void HTTPServer::process() {
 	            }
 	        }
 		} else if(nev < 0) {
-			cout << "kevent failed!" << endl; // should call errno..
+			std::cout << "kevent failed!" << std::endl; // should call errno..
 		} else { // Timeout
 			//usleep(100);
 		}
@@ -221,7 +221,7 @@ void HTTPServer::process() {
  * @return Pointer to Client object if found. NULL otherwise
  */
 Client* HTTPServer::getClient(SOCKET clfd) {
-	std::map<int, Client*>::const_iterator it;
+	std::unordered_map<int, Client*>::const_iterator it;
     it = clientMap.find(clfd);
 
 	// Client wasn't found
@@ -278,7 +278,7 @@ void HTTPServer::handleClient(Client *cl) {
     // Determine state of the client socket and act on it
     if(lenRecv == 0) {
         // Client closed the connection
-		cout << "[" << cl->getClientIP() << "] has opted to close the connection" << endl;
+		std::cout << "[" << cl->getClientIP() << "] has opted to close the connection" << std::endl;
         disconnectClient(cl);
     } else if(lenRecv < 0) {
         // Something went wrong with the connection
@@ -286,11 +286,11 @@ void HTTPServer::handleClient(Client *cl) {
         disconnectClient(cl);
     } else {
 		// Data received
-		cout << "[" << cl->getClientIP() << "] " << lenRecv << " bytes received" << endl;
+		/*cout << "[" << cl->getClientIP() << "] " << lenRecv << " bytes received" << endl;
 		for(unsigned int i = 0; i < lenRecv; i++) {
 			cout << pData[i];
 		}
-		cout << endl;
+		cout << endl;*/
         
         // Place the data in an HTTPRequest and pass it to handleRequest for processing
 		req = new HTTPRequest((byte*)pData, lenRecv);
@@ -313,8 +313,8 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
     // Parse the request
  	// If there's an error, report it and send a server error in response
     if(!req->parse()) {
-		cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << endl;
-		cout << req->getParseError() << endl;
+		std::cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << std::endl;
+		std::cout << req->getParseError() << std::endl;
 		sendStatusResponse(cl, Status(BAD_REQUEST), req->getParseError());
 		return;
     }
@@ -334,7 +334,7 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 			handleTrace(cl, req);
 			break;
         default:
-			cout << cl->getClientIP() << ": Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << endl;
+			std::cout << cl->getClientIP() << ": Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
 			sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
 		break;
     }
@@ -348,8 +348,8 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
  * @param req State of the request
  */
 void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
-	cout << "GET for: " << req->getRequestUri() << endl;
-	/*cout << "Headers:" << endl;
+	/*cout << "GET for: " << req->getRequestUri() << endl;
+	cout << "Headers:" << endl;
 	for(int i = 0; i < req->getNumHeaders(); i++) {
 		cout << req->getHeaderStr(i) << endl;
 	}
@@ -357,9 +357,11 @@ void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
 	
 	// Retrieve the host specified in the request
 	std::string host = req->getHeaderValue("Host");
-	ResourceHost* resHost = vhosts.find(host)->second;
+	std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
+	ResourceHost* resHost = it->second;
+	
 	// Invalid Host specified by client:
-	if(resHost == NULL) {
+	if(it == vhosts.end() || resHost == NULL) {
 		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
 		return;
 	}
@@ -394,7 +396,7 @@ void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
 	ResourceHost* resHost = vhosts.find(host)->second;
 	// Invalid Host specified by client:
 	if(resHost == NULL) {
-		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid Host specified: " + host);
+		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
 		return;
 	}
 	
@@ -501,7 +503,7 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 	res->addHeader("Server", "httpserver/1.0");
 	
 	// Time stamp the response with the Date header
-	string tstr;
+	std::string tstr;
 	char tbuf[36];
 	time_t rawtime;
 	struct tm* ptm;
@@ -529,7 +531,7 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 
 		// Client closed the connection
 		if(n < 0) {
-			cout << "[" << cl->getClientIP() << "] has disconnected." << endl;
+			std::cout << "[" << cl->getClientIP() << "] has disconnected." << std::endl;
 			disconnectClient(cl);
 			delete pData;
 			return;
@@ -540,11 +542,11 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 		bytesLeft -= n;
 	}
 	
-	cout << "[" << cl->getClientIP() << "] was sent " << totalSent << " bytes" << endl;
+	/*cout << "[" << cl->getClientIP() << "] was sent " << totalSent << " bytes" << endl;
 	for(unsigned int i = 0; i < totalSent; i++) {
 		cout << pData[i];
 	}
-	cout << endl;
+	cout << endl;*/
 	
 	if(disconnect)
 		disconnectClient(cl);

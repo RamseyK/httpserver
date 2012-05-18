@@ -20,13 +20,13 @@
 
 ResourceHost::ResourceHost(std::string base) {
 	cacheMap = NULL;
-    diskBasePath = base;
+    baseDiskPath = base;
     
     // Check to see if the disk base path is a valid path
     
     
     // Initialize cache map..possibly preload cache with files as a future feature?
-	cacheMap = new std::map<std::string, Resource*>();
+	cacheMap = new std::unordered_map<std::string, Resource*>();
 }
 
 ResourceHost::~ResourceHost() {
@@ -45,6 +45,10 @@ ResourceHost::~ResourceHost() {
  * @return Return's the resource object upon successful load
  */
 Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
+	// Make sure the webserver USER owns the file
+	if(!(sb.st_mode & S_IRWXU))
+		return NULL;
+	
 	std::ifstream file;
 	unsigned int len = 0;
 	
@@ -70,9 +74,55 @@ Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
       
 	// Create a new Resource object and setup it's contents
 	Resource* res = new Resource(path);
+	res->guessMimeType(); // Guess the MIME type based off the extension
 	res->setData(fdata, len);
 	
 	// Insert the resource into the map
+	cacheMap->insert(std::pair<std::string, Resource*>(res->getLocation(), res));
+	
+	return res;
+}
+
+/**
+ * Load Directory
+ * Read a directory (list or index) from disk and load it into the memory cache
+ *
+ * @param path Full disk path of the file
+ * @param sb Filled in stat struct
+ * @return Return's the resource object upon successful load
+ */
+Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
+	Resource* res = NULL;
+	// Make the path end with a / (for consistency) if it doesnt already
+	if(path[path.length()-1] != '/')
+		path += "/";
+	
+	// Probe for valid indexes
+	int numIndexes = sizeof(validIndexes) / sizeof(*validIndexes);
+	std::string loadIndex;
+	struct stat sidx;
+	for(int i = 0; i < numIndexes; i++) {
+		loadIndex = path + validIndexes[i];
+		// Found a suitable index file to load and return to the client
+		if(stat(loadIndex.c_str(), &sidx) != -1)
+			return loadFile(loadIndex.c_str(), sidx);
+	}
+	
+	// Make sure the webserver USER owns the directory
+	if(!(sb.st_mode & S_IRWXU))
+		return NULL;
+	
+	// Generate an HTML directory listing
+	std::string listing = listDirectory(path);
+	
+	unsigned int slen = listing.length();
+	char* sdata = new char[slen];
+	strncpy(sdata, listing.c_str(), slen);
+	
+	res = new Resource(path, true);
+	res->setData((byte*)sdata, slen);
+	
+	// Cache the listing
 	cacheMap->insert(std::pair<std::string, Resource*>(res->getLocation(), res));
 	
 	return res;
@@ -83,7 +133,7 @@ Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
  */
 void ResourceHost::clearCache() {
 	// Cleanup all Resource objects
-	std::map<std::string, Resource*>::const_iterator it;
+	std::unordered_map<std::string, Resource*>::const_iterator it;
 	for(it = cacheMap->begin(); it != cacheMap->end(); ++it) {
 		delete it->second;
 	}
@@ -94,10 +144,15 @@ void ResourceHost::clearCache() {
  * Return an HTML directory listing provided by the relative path dirPath
  *
  * @param path Full disk path of the file
- * @param uri Relative webserver URI
  * @return String representation of the directory. Blank string if invalid directory
  */
-std::string ResourceHost::listDirectory(std::string path, std::string uri) {
+std::string ResourceHost::listDirectory(std::string path) {
+	// Get just the relative uri from the entire path by stripping out the baseDiskPath from the beginning
+	size_t uri_pos = path.find_last_of(baseDiskPath);
+	std::string uri = "?";
+	if(uri_pos != std::string::npos)
+		uri = path.substr(uri_pos);
+	
 	std::stringstream ret;
 	ret << "<html><head><title>" << uri << "</title></head><body>";
 	
@@ -140,11 +195,11 @@ Resource* ResourceHost::getResource(std::string uri) {
 	if(uri.length() > 255 || uri.empty())
 		return NULL;
 	
-	std::string path = diskBasePath + uri;
+	std::string path = baseDiskPath + uri;
 	Resource* res = NULL;
     
 	// Check the cache first:
-	std::map<std::string, Resource*>::const_iterator it;
+	std::unordered_map<std::string, Resource*>::const_iterator it;
 	it = cacheMap->find(path);
 	// If it isn't the element past the end (end()), then a resource was found
 	if(it != cacheMap->end()) {
@@ -159,23 +214,10 @@ Resource* ResourceHost::getResource(std::string uri) {
 	if(stat(path.c_str(), &sb) == -1)
 		return NULL; // File not found
 	
-	// Make sure the webserver USER owns the files
-	if(!(sb.st_mode & S_IRWXU))
-		return NULL;
-	
 	// Determine file type
 	if(sb.st_mode & S_IFDIR) { // Directory
-		// Generate an HTML directory listing
-		std::string listing = listDirectory(path, uri);
-		unsigned int slen = listing.length();
-		char* sdata = new char[slen];
-		strncpy(sdata, listing.c_str(), slen);
-		
-		res = new Resource(path, true);
-		res->setData((byte*)sdata, slen);
-		
-		// Cache the listing
-		cacheMap->insert(std::pair<std::string, Resource*>(res->getLocation(), res));
+		// Load a directory list or index into memory from FS
+		res = loadDirectory(path, sb);
 	} else if(sb.st_mode & S_IFREG) { // Regular file
 		// Attempt to load the file into memory from the FS
 		res = loadFile(path, sb);

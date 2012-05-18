@@ -22,7 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,13 +31,20 @@
 
 #include "Resource.h"
 
+// Valid files to serve as an index of a directory
+const static char* const validIndexes[] = {
+	"index.html", // 0
+	"index.htm", // 1
+	//"index.php", // 2
+};
+
 class ResourceHost {
 private:
     // Local file system base path
-    std::string diskBasePath;
+    std::string baseDiskPath;
 
 	// Map to track resources only in the memory cache (not on disk)
-    std::map<std::string, Resource*> *cacheMap;
+    std::unordered_map<std::string, Resource*> *cacheMap;
     
 private:
 
@@ -46,13 +53,16 @@ private:
 
 	// Loads a file from the FS into the cache as a Resource
 	Resource* loadFile(std::string path, struct stat sb);
+	
+	// Loads a directory list or index from FS into the cache
+	Resource* loadDirectory(std::string path, struct stat sb);
     
 public:
     ResourceHost(std::string base);
     ~ResourceHost();
     
     // Provide a string rep of the directory listing
-    std::string listDirectory(std::string dirPath, std::string uri);
+    std::string listDirectory(std::string dirPath);
 
 	// Write a resource to the cache and file system
 	void putResource(Resource* res, bool writeToDisk);
