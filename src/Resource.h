@@ -20,7 +20,6 @@
 #define _RESOURCE_H
 
 #include <string>
-#include <unordered_map> // for mime lookup table loaded from file at startup ...maybe put in resourcemanager
 
 typedef unsigned char byte;
 
@@ -39,8 +38,6 @@ private:
 public:
     Resource(std::string loc, bool dir = false);
     ~Resource();
-
-	void guessMimeType();
     
     // Setters
     
@@ -48,6 +45,10 @@ public:
         data = d;
 		size = s;
     }
+
+	void setMimeType(std::string mt) {
+		mimeType = mt;
+	}
     
     // Getters
 
@@ -77,6 +78,15 @@ public:
 	
 	unsigned int getSize() {
 		return size;
+	}
+	
+	// Get the file extension
+	std::string getExtension() {
+		std::string ext = "";
+		size_t ext_pos = location.find_last_of(".");
+		if(ext_pos != std::string::npos)
+			ext = location.substr(ext_pos+1);
+		return ext;
 	}
 };
 

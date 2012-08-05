@@ -68,8 +68,7 @@ class HTTPServer {
     
     // Request handlers
     void handleRequest(Client* cl, HTTPRequest* req);
-	void handleGet(Client* cl, HTTPRequest* req);
-    void handleHead(Client* cl, HTTPRequest* req);
+	void handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost);
 	void handleOptions(Client* cl, HTTPRequest* req);
 	void handleTrace(Client* cl, HTTPRequest* req);
     

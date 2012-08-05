@@ -43,10 +43,18 @@ private:
     // Local file system base path
     std::string baseDiskPath;
 
+	// Dictionary that relates file extensions to their MIME type
+	std::unordered_map<std::string, std::string> mimeMap = {
+		#define STR_PAIR(K,V) std::pair<std::string, std::string>(K,V)
+		#include "MimeTypes.inc"
+	};
+
 	// Map to track resources only in the memory cache (not on disk)
-    std::unordered_map<std::string, Resource*> *cacheMap;
+    std::unordered_map<std::string, Resource*> cacheMap;
     
 private:
+	// Returns a MIME type string given an extension
+	std::string lookupMimeType(std::string ext);
 
 	// Reset's the cache by deleteing all resources from memory and clearing the map
 	void clearCache();

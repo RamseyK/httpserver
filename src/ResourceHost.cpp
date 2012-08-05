@@ -19,21 +19,28 @@
 #include "ResourceHost.h"
 
 ResourceHost::ResourceHost(std::string base) {
-	cacheMap = NULL;
     baseDiskPath = base;
     
     // Check to see if the disk base path is a valid path
     
-    
-    // Initialize cache map..possibly preload cache with files as a future feature?
-	cacheMap = new std::unordered_map<std::string, Resource*>();
 }
 
 ResourceHost::~ResourceHost() {
 	clearCache();
-	
-	// Delete the map instance
-	delete cacheMap;
+}
+
+/**
+ * Looks up a MIME type in the dictionary
+ * 
+ * @param ext File extension to use for the lookup
+ * @return MIME type as a String. If type could not be found, returns the default 'text/html'
+ */
+std::string ResourceHost::lookupMimeType(std::string ext) {
+	std::unordered_map<std::string, std::string>::const_iterator it = mimeMap.find(ext);
+	if(it == mimeMap.end())
+		return "text/html";
+
+	return it->second;
 }
 
 /**
@@ -55,7 +62,7 @@ Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
 	// Open the file
 	file.open(path.c_str(), std::ios::binary);
   
-	// Return null if failed
+	// Return null if the file failed to open
 	if(!file.is_open())
 	    return NULL;
   
@@ -74,11 +81,11 @@ Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
       
 	// Create a new Resource object and setup it's contents
 	Resource* res = new Resource(path);
-	res->guessMimeType(); // Guess the MIME type based off the extension
+	res->setMimeType(lookupMimeType(res->getExtension()));
 	res->setData(fdata, len);
 	
 	// Insert the resource into the map
-	cacheMap->insert(std::pair<std::string, Resource*>(res->getLocation(), res));
+	cacheMap.insert(std::pair<std::string, Resource*>(res->getLocation(), res));
 	
 	return res;
 }
@@ -94,7 +101,7 @@ Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
 Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
 	Resource* res = NULL;
 	// Make the path end with a / (for consistency) if it doesnt already
-	if(path[path.length()-1] != '/')
+	if(path.empty() || path[path.length()-1] != '/')
 		path += "/";
 	
 	// Probe for valid indexes
@@ -123,7 +130,7 @@ Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
 	res->setData((byte*)sdata, slen);
 	
 	// Cache the listing
-	cacheMap->insert(std::pair<std::string, Resource*>(res->getLocation(), res));
+	cacheMap.insert(std::pair<std::string, Resource*>(res->getLocation(), res));
 	
 	return res;
 }
@@ -133,11 +140,10 @@ Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
  */
 void ResourceHost::clearCache() {
 	// Cleanup all Resource objects
-	std::unordered_map<std::string, Resource*>::const_iterator it;
-	for(it = cacheMap->begin(); it != cacheMap->end(); ++it) {
-		delete it->second;
-	}
-	cacheMap->clear();
+	for(auto& x : cacheMap)
+		delete x.second;
+	
+	cacheMap.clear();
 }
 
 /**
@@ -164,7 +170,7 @@ std::string ResourceHost::listDirectory(std::string path) {
         return "";
 
 	// Page title, displaying the URI of the directory being listed
-	ret << "<h1>Index of " << uri << "</h1><hr><br />";
+	ret << "<h1>Index of " << uri << "</h1><hr /><br />";
     
     // Add all files and directories to the return
     while((ent = readdir(dir)) != NULL) {
@@ -200,9 +206,9 @@ Resource* ResourceHost::getResource(std::string uri) {
     
 	// Check the cache first:
 	std::unordered_map<std::string, Resource*>::const_iterator it;
-	it = cacheMap->find(path);
+	it = cacheMap.find(path);
 	// If it isn't the element past the end (end()), then a resource was found
-	if(it != cacheMap->end()) {
+	if(it != cacheMap.end()) {
 		res = it->second;
 		return res;
 	}

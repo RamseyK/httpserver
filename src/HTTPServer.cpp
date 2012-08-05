@@ -127,11 +127,8 @@ void HTTPServer::stop() {
  */
 void HTTPServer::closeSockets() {
     // Close all open connections and delete Client's from memory
-    std::unordered_map<int, Client*>::const_iterator it;
-    for(it = clientMap.begin(); it != clientMap.end(); ++it) {
-        Client *cl = it->second;
-        disconnectClient(cl, false);
-    }
+    for(auto& x : clientMap)
+        disconnectClient(x.second, false);
     
     // Clear the map
     clientMap.clear();
@@ -319,13 +316,22 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 		return;
     }
     
+    // Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
+	std::string host = req->getHeaderValue("Host");
+	std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
+	ResourceHost* resHost = it->second;
+	
+	// Invalid Host specified by client:
+	if(it == vhosts.end() || resHost == NULL) {
+		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
+		return;
+	}
+    
     // Send the request to the correct handler function
     switch(req->getMethod()) {
         case Method(HEAD):
-            handleHead(cl, req);
-            break;
         case Method(GET):
-            handleGet(cl, req);
+            handleGet(cl, req, resHost);
             break;
 		case Method(OPTIONS):
 			handleOptions(cl, req);
@@ -341,13 +347,14 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 }
 
 /**
- * Handle Get
- * Process a GET request to provide the client with an appropriate response
+ * Handle Get or Head
+ * Process a GET or HEAD request to provide the client with an appropriate response
  *
  * @param cl Client requesting the resource
  * @param req State of the request
+ * @param resHost Resource host to service the request
  */
-void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
+void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) {
 	/*cout << "GET for: " << req->getRequestUri() << endl;
 	cout << "Headers:" << endl;
 	for(int i = 0; i < req->getNumHeaders(); i++) {
@@ -355,17 +362,6 @@ void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
 	}
 	cout << endl;*/
 	
-	// Retrieve the host specified in the request
-	std::string host = req->getHeaderValue("Host");
-	std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
-	ResourceHost* resHost = it->second;
-	
-	// Invalid Host specified by client:
-	if(it == vhosts.end() || resHost == NULL) {
-		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
-		return;
-	}
-	
 	// Check if the requested resource exists
 	std::string uri = req->getRequestUri();
     Resource* r = resHost->getResource(uri);
@@ -374,42 +370,15 @@ void HTTPServer::handleGet(Client *cl, HTTPRequest *req) {
 		res->setStatus(Status(OK));
 		res->addHeader("Content-Type", "text/html");
 		res->addHeader("Content-Length", r->getSize());
-		res->setData(r->getData(), r->getSize());
-		sendResponse(cl, res);
-		delete res;
-	} else { // Not found
-		sendStatusResponse(cl, Status(NOT_FOUND));
-	}
-}
-
-/**
- * Handle Head
- * Process a HEAD request
- * HEAD: Return the corresponding headers for a resource, but not the acutal resource itself (in the body)
- *
- * @param cl Client requesting the resource
- * @param req State of the request
- */
-void HTTPServer::handleHead(Client *cl, HTTPRequest *req) {
-	// Retrieve the host specified in the request
-	std::string host = req->getHeaderValue("Host");
-	ResourceHost* resHost = vhosts.find(host)->second;
-	// Invalid Host specified by client:
-	if(resHost == NULL) {
-		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
-		return;
-	}
-	
-	// Check if the requested resource exists
-	std::string uri = req->getRequestUri();
-    Resource* r = resHost->getResource(uri);
-	if(r != NULL) { // Exists
-		// Only include headers associated with the file. NEVER contains a body
-		HTTPResponse* res = new HTTPResponse();
-		res->setStatus(Status(OK));
-		res->addHeader("Content-Type", "text/html");
-		res->addHeader("Content-Length", r->getSize());
-		sendResponse(cl, res);
+		
+		// Only send a message body if it's a GET request. Never send a body for HEAD
+		if(req->getMethod() == Method(GET))
+			res->setData(r->getData(), r->getSize());
+			
+		// Check if the client prefers to close the connection
+		bool dc = req->getHeaderValue("Connection").compare("close") == 0;
+			
+		sendResponse(cl, res, dc);
 		delete res;
 	} else { // Not found
 		sendStatusResponse(cl, Status(NOT_FOUND));
