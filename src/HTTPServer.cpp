@@ -380,6 +380,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) 
 			
 		sendResponse(cl, res, dc);
 		delete res;
+		delete r;
 	} else { // Not found
 		sendStatusResponse(cl, Status(NOT_FOUND));
 	}

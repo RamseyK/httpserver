@@ -26,7 +26,6 @@ ResourceHost::ResourceHost(std::string base) {
 }
 
 ResourceHost::~ResourceHost() {
-	clearCache();
 }
 
 /**
@@ -44,14 +43,14 @@ std::string ResourceHost::lookupMimeType(std::string ext) {
 }
 
 /**
- * Load File
- * Read a file from disk and load it into the memory cache
+ * Read File
+ * Read a file from disk and return the appropriate Resource object
  *
  * @param path Full disk path of the file
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
+Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 	// Make sure the webserver USER owns the file
 	if(!(sb.st_mode & S_IRWXU))
 		return NULL;
@@ -84,21 +83,18 @@ Resource* ResourceHost::loadFile(std::string path, struct stat sb) {
 	res->setMimeType(lookupMimeType(res->getExtension()));
 	res->setData(fdata, len);
 	
-	// Insert the resource into the map
-	cacheMap.insert(std::pair<std::string, Resource*>(res->getLocation(), res));
-	
 	return res;
 }
 
 /**
- * Load Directory
- * Read a directory (list or index) from disk and load it into the memory cache
+ * Read Directory
+ * Read a directory (list or index) from disk into a Resource object
  *
  * @param path Full disk path of the file
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
+Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
 	Resource* res = NULL;
 	// Make the path end with a / (for consistency) if it doesnt already
 	if(path.empty() || path[path.length()-1] != '/')
@@ -112,7 +108,7 @@ Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
 		loadIndex = path + validIndexes[i];
 		// Found a suitable index file to load and return to the client
 		if(stat(loadIndex.c_str(), &sidx) != -1)
-			return loadFile(loadIndex.c_str(), sidx);
+			return readFile(loadIndex.c_str(), sidx);
 	}
 	
 	// Make sure the webserver USER owns the directory
@@ -120,7 +116,7 @@ Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
 		return NULL;
 	
 	// Generate an HTML directory listing
-	std::string listing = listDirectory(path);
+	std::string listing = generateDirList(path);
 	
 	unsigned int slen = listing.length();
 	char* sdata = new char[slen];
@@ -129,21 +125,7 @@ Resource* ResourceHost::loadDirectory(std::string path, struct stat sb) {
 	res = new Resource(path, true);
 	res->setData((byte*)sdata, slen);
 	
-	// Cache the listing
-	cacheMap.insert(std::pair<std::string, Resource*>(res->getLocation(), res));
-	
 	return res;
-}
-
-/**
- * Dump and delete all resources in the cache, then clear it out
- */
-void ResourceHost::clearCache() {
-	// Cleanup all Resource objects
-	for(auto& x : cacheMap)
-		delete x.second;
-	
-	cacheMap.clear();
 }
 
 /**
@@ -152,7 +134,7 @@ void ResourceHost::clearCache() {
  * @param path Full disk path of the file
  * @return String representation of the directory. Blank string if invalid directory
  */
-std::string ResourceHost::listDirectory(std::string path) {
+std::string ResourceHost::generateDirList(std::string path) {
 	// Get just the relative uri from the entire path by stripping out the baseDiskPath from the beginning
 	size_t uri_pos = path.find_last_of(baseDiskPath);
 	std::string uri = "?";
@@ -192,7 +174,6 @@ std::string ResourceHost::listDirectory(std::string path) {
 
 /**
  * Retrieve a resource from the File system
- * The memory cache will be checked before going out to disk
  *
  * @param uri The URI sent in the request
  * @return NULL if unable to load the resource. Resource object
@@ -203,17 +184,6 @@ Resource* ResourceHost::getResource(std::string uri) {
 	
 	std::string path = baseDiskPath + uri;
 	Resource* res = NULL;
-    
-	// Check the cache first:
-	std::unordered_map<std::string, Resource*>::const_iterator it;
-	it = cacheMap.find(path);
-	// If it isn't the element past the end (end()), then a resource was found
-	if(it != cacheMap.end()) {
-		res = it->second;
-		return res;
-	}
-
-	// Not in cache, check the disk
 	
 	// Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
 	struct stat sb;
@@ -222,11 +192,11 @@ Resource* ResourceHost::getResource(std::string uri) {
 	
 	// Determine file type
 	if(sb.st_mode & S_IFDIR) { // Directory
-		// Load a directory list or index into memory from FS
-		res = loadDirectory(path, sb);
+		// Read a directory list or index into memory from FS
+		res = readDirectory(path, sb);
 	} else if(sb.st_mode & S_IFREG) { // Regular file
 		// Attempt to load the file into memory from the FS
-		res = loadFile(path, sb);
+		res = readFile(path, sb);
 	} else { // Something else..device, socket, symlink
 		return NULL;
 	}

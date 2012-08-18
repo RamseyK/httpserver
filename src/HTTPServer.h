@@ -16,8 +16,8 @@
 	limitations under the License.
 */
 
-#ifndef _HTTPSERVER_H
-#define _HTTPSERVER_H
+#ifndef _HTTPSERVER_H_
+#define _HTTPSERVER_H_
 
 #include <unordered_map>
 #include <vector>

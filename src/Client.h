@@ -16,8 +16,8 @@
 	limitations under the License.
 */
 
-#ifndef CLIENT_H_
-#define CLIENT_H_
+#ifndef _CLIENT_H_
+#define _CLIENT_H_
 
 #include <netinet/in.h>
 #include <arpa/inet.h>

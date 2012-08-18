@@ -16,8 +16,8 @@
 	limitations under the License.
 */
 
-#ifndef _RESOURCE_H
-#define _RESOURCE_H
+#ifndef _RESOURCE_H_
+#define _RESOURCE_H_
 
 #include <string>
 
@@ -29,10 +29,7 @@ private:
     byte* data; // File data
 	unsigned int size;
 	std::string mimeType;
-    std::string encoding;
-    std::string language;
     std::string location; // Disk path location within the server
-    std::string md5;
 	bool directory;
 
 public:
@@ -55,14 +52,6 @@ public:
 	std::string getMimeType() {
 		return mimeType;
 	}
-    
-    std::string getEncoding() {
-        return encoding;
-    }
-    
-    std::string getLanguage() {
-        return language;
-    }
     
     std::string getLocation() {
         return location;

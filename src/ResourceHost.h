@@ -48,34 +48,28 @@ private:
 		#define STR_PAIR(K,V) std::pair<std::string, std::string>(K,V)
 		#include "MimeTypes.inc"
 	};
-
-	// Map to track resources only in the memory cache (not on disk)
-    std::unordered_map<std::string, Resource*> cacheMap;
     
 private:
 	// Returns a MIME type string given an extension
 	std::string lookupMimeType(std::string ext);
 
-	// Reset's the cache by deleteing all resources from memory and clearing the map
-	void clearCache();
-
-	// Loads a file from the FS into the cache as a Resource
-	Resource* loadFile(std::string path, struct stat sb);
+	// Read a file from the FS and into a Resource object
+	Resource* readFile(std::string path, struct stat sb);
 	
-	// Loads a directory list or index from FS into the cache
-	Resource* loadDirectory(std::string path, struct stat sb);
+	// Reads a directory list or index from FS into a Resource object
+	Resource* readDirectory(std::string path, struct stat sb);
+	
+	// Provide a string rep of the directory listing based on URI
+    std::string generateDirList(std::string dirPath);
     
 public:
     ResourceHost(std::string base);
     ~ResourceHost();
-    
-    // Provide a string rep of the directory listing
-    std::string listDirectory(std::string dirPath);
 
-	// Write a resource to the cache and file system
+	// Write a resource to the file system
 	void putResource(Resource* res, bool writeToDisk);
     
-    // Returns a Resource in the cache or file system if it exists
+    // Returns a Resource based on URI
     Resource* getResource(std::string uri);
 };
 

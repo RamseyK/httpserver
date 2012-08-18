@@ -22,14 +22,14 @@ Resource::Resource(std::string loc, bool dir) {
 	location = loc;
 	directory = dir;
 	mimeType = "";
-	encoding = "";
-	language = "";
-	md5 = "";
 	size = 0;
 	data = NULL;
 }
 
 Resource::~Resource() {
-	if(data != NULL)
+	if(data != NULL) {
 		delete data;
+		data = NULL;
+	}
 }
+
