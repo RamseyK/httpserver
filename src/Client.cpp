@@ -25,5 +25,39 @@ Client::Client(SOCKET fd, sockaddr_in addr) {
 }
 
 Client::~Client() {
+    clearSendQueue();
+}
+
+void Client::addToSendQueue(SendQueueItem* item) {
+	sendQueue.push(item);
+}
+
+unsigned int Client::sendQueueSize() {
+	return sendQueue.size();
+}
+
+SendQueueItem* Client::nextFromSendQueue(unsigned int bytesToSend) {
+	if(sendQueue.empty())
+		return NULL;
+
+	SendQueueItem* item = sendQueue.front();
+	unsigned int remaining = item->getSize() - item->getOffset();
+
+
+	if(bytesToSend > remaining) { // Rest or entire resource data can be sent, Dequeue
+		sendQueue.pop(); // Dequeue
+	} else { // Only a portion of the resource can be sent, keep in queue
+		// Add to the back of the queue
+		sendQueue.pop();
+		sendQueue.push(item);
+	}
+
+	return item;
+}
     
+void Client::clearSendQueue() {
+	while(!sendQueue.empty()) {
+		delete sendQueue.front();
+		sendQueue.pop();
+	}
 }

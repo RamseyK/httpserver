@@ -132,7 +132,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
  * Return an HTML directory listing provided by the relative path dirPath
  *
  * @param path Full disk path of the file
- * @return String representation of the directory. Blank string if invalid directory
+ * @return HTML string representation of the directory. Blank string if invalid directory
  */
 std::string ResourceHost::generateDirList(std::string path) {
 	// Get just the relative uri from the entire path by stripping out the baseDiskPath from the beginning

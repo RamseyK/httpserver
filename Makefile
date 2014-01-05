@@ -8,9 +8,10 @@ BUILDDIR := build
 TARGET := httpserver
 
 # Debug Flags
-DEBUGFLAGS := -g -O0 -Wall
+DEBUGFLAGS := -g3 -O0 -Wall
+RTCHECKS := -fmudflap -fstack-check -gnato
 # Production Flags
-PRODFLAGS := -Wall -O3
+PRODFLAGS := -Wall -O2
 # Active Flags
 CFLAGS := -std=c++11 -stdlib=libc++ -Iinclude/ $(DEBUGFLAGS)
 LINK := -stdlib=libc++ $(DEBUGFLAGS)
@@ -27,6 +28,6 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@echo " CC $<"; $(CC) $(CFLAGS) -c -o $@ $<
  
 clean:
-	@echo " Cleaning..."; $(RM) -r $(BUILDDIR) $(BINDIR)/$(TARGET)
+	@echo " Cleaning..."; rm -r $(BUILDDIR) $(BINDIR)/$(TARGET)*
  
 .PHONY: clean

@@ -21,12 +21,19 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <queue>
+
+#include "SendQueueItem.h"
 
 #define SOCKET int
+
+typedef unsigned char byte;
 
 class Client {
     SOCKET socketDesc; // Socket Descriptor
     sockaddr_in clientAddr;
+
+    std::queue<SendQueueItem*> sendQueue;
     
 public:
     Client(SOCKET fd, sockaddr_in addr);
@@ -40,9 +47,14 @@ public:
         return socketDesc;
     }
     
-    char *getClientIP() {
+    char* getClientIP() {
         return inet_ntoa(clientAddr.sin_addr);
     }
+
+    void addToSendQueue(SendQueueItem* item);
+    unsigned int sendQueueSize();
+    SendQueueItem* nextFromSendQueue(unsigned int bytesToSend);
+    void clearSendQueue();
 };
 
 #endif

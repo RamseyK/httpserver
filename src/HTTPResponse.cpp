@@ -92,6 +92,7 @@ void HTTPResponse::determineReasonStr() {
 /**
  * Create
  * Create and return a byte array of an HTTP response, built from the variables of this HTTPResponse
+ * Caller will be responsible for cleaning up returned byte array
  *
  * @return Byte array of this HTTPResponse to be sent over the wire
  */

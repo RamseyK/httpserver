@@ -49,7 +49,7 @@ class HTTPServer {
     SOCKET listenSocket; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
 	int kqfd; // kqueue descriptor
-	struct kevent evlist[QUEUE_SIZE]; // Events that have changed (max QUEUE_SIZE at a time)
+	struct kevent evlist[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
     std::unordered_map<SOCKET, Client*> clientMap; // Client map, maps Socket descriptor to Client object
 
 	// Resources / File System
@@ -62,9 +62,10 @@ class HTTPServer {
 	Client *getClient(SOCKET clfd);
 	void closeSockets();
     void disconnectClient(Client* cl, bool mapErase = true);
-    void handleClient(Client* cl);
+    void readClient(Client* cl, int data_len);
+    void writeClient(Client* cl, int avail_bytes);
 	void sendStatusResponse(Client* cl, int status, std::string msg = "");
-	void sendResponse(Client* cl, HTTPResponse* res, bool disconnect = false);
+	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect = false);
     
     // Request handlers
     void handleRequest(Client* cl, HTTPRequest* req);

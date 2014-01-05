@@ -24,15 +24,14 @@
  */
 HTTPServer::HTTPServer() {
 	canRun = false;
-	
-    listenSocket = INVALID_SOCKET;
-    memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
+	listenSocket = INVALID_SOCKET;
 
 	// Create a resource host serving the base path ./htdocs on disk
     ResourceHost* resHost = new ResourceHost("./htdocs");
 	hostList.push_back(resHost);
 
 	// Setup the resource host serving htdocs to provide for the following vhosts:
+	vhosts.insert(std::pair<std::string, ResourceHost*>("localhost:8080", resHost));
 	vhosts.insert(std::pair<std::string, ResourceHost*>("127.0.0.1:8080", resHost));
 	vhosts.insert(std::pair<std::string, ResourceHost*>("192.168.1.59:8080", resHost));
 }
@@ -61,6 +60,8 @@ HTTPServer::~HTTPServer() {
  * @return True if initialization succeeded. False if otherwise
  */
 void HTTPServer::start(int port) {    
+	canRun = false;
+
 	// Create a handle for the listening socket, TCP
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(listenSocket == INVALID_SOCKET) {
@@ -72,6 +73,7 @@ void HTTPServer::start(int port) {
 	fcntl(listenSocket, F_SETFL, O_NONBLOCK);
     
 	// Populate the server address structure
+    memset(&serverAddr, 0, sizeof(serverAddr)); // clear the struct
 	serverAddr.sin_family = AF_INET; // Family: IP protocol
 	serverAddr.sin_port = htons(port); // Set the port (convert from host to netbyte order)
 	serverAddr.sin_addr.s_addr = INADDR_ANY; // Let OS intelligently select the server's host address
@@ -141,9 +143,11 @@ void HTTPServer::closeSockets() {
 
 /**
  * Accept Connection
- * When a new connection is detected in runServer() this function is called. This attempts to accept the pending connection, instance a Client object, and add to the client Map
+ * When a new connection is detected in runServer() this function is called. This attempts to accept the pending 
+ * connection, instance a Client object, and add to the client Map
  */
 void HTTPServer::acceptConnection() {
+	// modify to support multiple address families (bottom): http://eradman.com/posts/kqueue-tcp.html
     // Setup new client with prelim address info
     sockaddr_in clientAddr;
     int clientAddrLen = sizeof(clientAddr);
@@ -160,10 +164,15 @@ void HTTPServer::acceptConnection() {
     // Instance Client object
     Client *cl = new Client(clfd, clientAddr);
     
-	// Have kqueue track the new client socket (udata contains pointer to Client object)
-	struct kevent kev;
-	EV_SET(&kev, clfd, EVFILT_READ, EV_ADD, 0, 0, cl); // Fills kev
-	kevent(kqfd, &kev, 1, NULL, 0, NULL);
+	// Have kqueue track the new client socket for READ events
+	struct kevent read_kev;
+	EV_SET(&read_kev, clfd, EVFILT_READ, EV_ADD, 0, 0, NULL); // Fills read_kev
+	kevent(kqfd, &read_kev, 1, NULL, 0, NULL);
+
+	// Have kqueue track the new client socket for WRITE events
+	struct kevent write_kev;
+	EV_SET(&write_kev, clfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL); // Fills write_kev
+	kevent(kqfd, &write_kev, 1, NULL, 0, NULL);
     
     // Add the client object to the client map
     clientMap.insert(std::pair<int, Client*>(clfd, cl));
@@ -182,7 +191,7 @@ void HTTPServer::process() {
 	Client* cl = NULL;
 	
 	while(canRun) {
-		// Get a list of changed socket descriptors (if any) in evlist
+		// Get a list of changed socket descriptors with a read event triggered in evlist
 		// Timeout is NULL, kevent will wait for a change before returning
 		nev = kevent(kqfd, NULL, 0, evlist, QUEUE_SIZE, NULL);
 		
@@ -192,21 +201,30 @@ void HTTPServer::process() {
 	            if(evlist[i].ident == (unsigned int)listenSocket) { // A client is waiting to connect
 	                acceptConnection();
 	            } else { // Client descriptor has triggered an event
-					cl = (Client*)evlist[i].udata;
-					if(evlist[i].flags & EVFILT_READ) {
-	                	handleClient(cl);
-					} else if(evlist[i].flags & EV_EOF) {
+					cl = getClient(evlist[i].ident); // ident contains the clients socket descriptor
+					if(cl == NULL) {
+						std::cout << "Could not find client" << std::endl;
+						continue;
+					}
+
+					// Client wants to disconnect
+					if(evlist[i].flags & EV_EOF) {
 						disconnectClient(cl);
-					} else {
-						// unhandled event
+						continue;
+					}
+
+					if(evlist[i].filter == EVFILT_READ) {
+	                	readClient(cl, evlist[i].data); // data contains the number of bytes waiting to be read
+					} else if((evlist[i].filter == EVFILT_WRITE) && (cl->sendQueueSize() > 0)) {
+						writeClient(cl, evlist[i].data); // data contains number of bytes that can be written
 					}
 	            }
 	        }
-		} else if(nev < 0) {
-			std::cout << "kevent failed!" << std::endl; // should call errno..
+		} /*else if(nev < 0) {
+			std::cout << "read kevent failed!" << std::endl; // should call errno..
 		} else { // Timeout
 			//usleep(100);
-		}
+		}*/
 	}
 }
 
@@ -253,24 +271,24 @@ void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
 }
 
 /**
- * Handle Client
- * Recieve data from a client that has indicated (via select()) that it has data waiting. Pass recv'd data to handleRequest()
+ * Read Client
+ * Recieve data from a client that has indicated that it has data waiting. Pass recv'd data to handleRequest()
  * Also detect any errors in the state of the socket
  *
  * @param cl Pointer to Client that sent the data
+ * @param data_len Number of bytes waiting to be read
  */
-void HTTPServer::handleClient(Client *cl) {
-    if (cl == NULL)
+void HTTPServer::readClient(Client *cl, int data_len) {
+    if (cl == NULL || data_len <= 0)
         return;
     
 	HTTPRequest* req;
-    size_t dataLen = 1300;
-    char* pData = new char[dataLen];
+    char* pData = new char[data_len];
     
     // Receive data on the wire into pData
     /* TODO: Figure out what flags need to be set */
     int flags = 0; 
-    ssize_t lenRecv = recv(cl->getSocket(), pData, dataLen, flags);
+    ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
     
     // Determine state of the client socket and act on it
     if(lenRecv == 0) {
@@ -299,6 +317,65 @@ void HTTPServer::handleClient(Client *cl) {
 }
 
 /**
+ * Write Client
+ * Client has indicated it is read for writing. Write avail_bytes number of bytes to the socket if the send queue has an item
+ *
+ * @param cl Pointer to Client that sent the data
+ * @param avail_bytes Number of bytes available for writing in the send buffer
+ */
+void HTTPServer::writeClient(Client* cl, int avail_bytes) {
+    if (cl == NULL || avail_bytes <= 0)
+        return;
+
+	int actual_sent = 0; // Actual number of bytes sent as returned by send()
+	int attempt_sent = 0; // Bytes that we're attempting to send now
+	int remaining = 0; // Size of data left to send for the item
+	bool disconnect = false;
+	byte* pData = NULL;
+
+	SendQueueItem* item = cl->nextFromSendQueue(avail_bytes);
+	if(item == NULL)
+		return;
+
+	pData = item->getData();
+	remaining = item->getSize() - item->getOffset();
+	disconnect = item->getDisconnect();
+
+	if(avail_bytes >= remaining) {
+		// Send buffer is bigger than we need, rest of item can be sent and data deleted
+		attempt_sent = remaining;
+		actual_sent = send(cl->getSocket(), pData+(item->getOffset()), attempt_sent, 0);
+
+		item->setOffset(item->getSize());
+	} else {
+		// Send buffer is smaller than we need, send the amount thats available
+		attempt_sent = avail_bytes;
+		actual_sent = send(cl->getSocket(), pData+(item->getOffset()), attempt_sent, 0);
+
+		item->setOffset(item->getOffset() + avail_bytes);
+	}
+	
+	//std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
+
+	// SendQueueItem isnt needed anymore (already removed from queue by nextFromSendQueue)
+	if(item->getSize() == item->getOffset()) {
+		disconnect = item->getDisconnect();
+
+		delete item;
+	}
+
+	if(actual_sent < 0) {
+		disconnect = true;
+	} else if(attempt_sent != actual_sent) {
+		// Catch case where the attempted and actual amount of data sent differ - shouldnt happen
+		std::cout << "[" << cl->getClientIP() << "] Failed to send expected amount to client. " << actual_sent << " out of " << attempt_sent << std::endl;
+	}
+
+	if(disconnect)
+		disconnectClient(cl);
+}
+
+/**
  * Handle Request
  * Process an incoming request from a Client. Send request off to appropriate handler function
  * that corresponds to an HTTP operation (GET, HEAD etc) :)
@@ -315,17 +392,25 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 		sendStatusResponse(cl, Status(BAD_REQUEST), req->getParseError());
 		return;
     }
+
+	std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " " << req->getRequestUri() << std::endl;
+	/*cout << "Headers:" << endl;
+	for(int i = 0; i < req->getNumHeaders(); i++) {
+		cout << req->getHeaderStr(i) << endl;
+	}
+	cout << endl;*/
     
     // Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
 	std::string host = req->getHeaderValue("Host");
 	std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
-	ResourceHost* resHost = it->second;
 	
 	// Invalid Host specified by client:
-	if(it == vhosts.end() || resHost == NULL) {
+	if(it == vhosts.end()) {
 		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
 		return;
 	}
+
+	ResourceHost* resHost = it->second;
     
     // Send the request to the correct handler function
     switch(req->getMethod()) {
@@ -340,7 +425,7 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 			handleTrace(cl, req);
 			break;
         default:
-			std::cout << cl->getClientIP() << ": Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
+			std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
 			sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
 		break;
     }
@@ -354,32 +439,26 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
  * @param req State of the request
  * @param resHost Resource host to service the request
  */
-void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) {
-	/*cout << "GET for: " << req->getRequestUri() << endl;
-	cout << "Headers:" << endl;
-	for(int i = 0; i < req->getNumHeaders(); i++) {
-		cout << req->getHeaderStr(i) << endl;
-	}
-	cout << endl;*/
-	
+void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) {	
 	// Check if the requested resource exists
 	std::string uri = req->getRequestUri();
     Resource* r = resHost->getResource(uri);
+
 	if(r != NULL) { // Exists
-		HTTPResponse* res = new HTTPResponse();
-		res->setStatus(Status(OK));
-		res->addHeader("Content-Type", "text/html");
-		res->addHeader("Content-Length", r->getSize());
+		HTTPResponse* resp = new HTTPResponse();
+		resp->setStatus(Status(OK));
+		resp->addHeader("Content-Type", r->getMimeType());
+		resp->addHeader("Content-Length", r->getSize());
 		
 		// Only send a message body if it's a GET request. Never send a body for HEAD
 		if(req->getMethod() == Method(GET))
-			res->setData(r->getData(), r->getSize());
+			resp->setData(r->getData(), r->getSize());
 			
 		// Check if the client prefers to close the connection
 		bool dc = req->getHeaderValue("Connection").compare("close") == 0;
 			
-		sendResponse(cl, res, dc);
-		delete res;
+		sendResponse(cl, resp, dc);
+		delete resp;
 		delete r;
 	} else { // Not found
 		sendStatusResponse(cl, Status(NOT_FOUND));
@@ -397,12 +476,14 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) 
 void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
 	// For now, we'll always return the capabilities of the server instead of figuring it out for each resource
 	std::string allow = "HEAD, GET, OPTIONS, TRACE";
-	HTTPResponse* res = new HTTPResponse();
-	res->setStatus(Status(OK));
-	res->addHeader("Allow", allow.c_str());
-	res->addHeader("Content-Length", "0"); // Required
-	sendResponse(cl, res, true);
-	delete res;
+
+	HTTPResponse* resp = new HTTPResponse();
+	resp->setStatus(Status(OK));
+	resp->addHeader("Allow", allow.c_str());
+	resp->addHeader("Content-Length", "0"); // Required
+
+	sendResponse(cl, resp, true);
+	delete resp;
 }
 
 /**
@@ -421,14 +502,14 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
 	req->getBytes(buf, len);
 	
 	// Send a response with the entire request as the body
-	HTTPResponse* res = new HTTPResponse();
-	res->setStatus(Status(OK));
-	res->addHeader("Content-Type", "message/http");
-	res->addHeader("Content-Length", len);
-	res->setData(buf, len);
-	sendResponse(cl, res, true);
+	HTTPResponse* resp = new HTTPResponse();
+	resp->setStatus(Status(OK));
+	resp->addHeader("Content-Type", "message/http");
+	resp->addHeader("Content-Length", len);
+	resp->setData(buf, len);
+	sendResponse(cl, resp, true);
 	
-	delete res;
+	delete resp;
 	delete buf;
 }
 
@@ -442,22 +523,22 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
  * @param msg An additional message to append to the body text
  */
 void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
-	HTTPResponse* res = new HTTPResponse();
-	res->setStatus(Status(status));
+	HTTPResponse* resp = new HTTPResponse();
+	resp->setStatus(Status(status));
 	
 	// Body message: Reason string + additional msg	
-	std::string body = res->getReason() + " " + msg;
+	std::string body = resp->getReason() + ": " + msg;
 	unsigned int slen = body.length();
 	char* sdata = new char[slen];
 	strncpy(sdata, body.c_str(), slen);
 	
-	res->addHeader("Content-Type", "text/plain");
-	res->addHeader("Content-Length", slen);
-	res->setData((byte*)sdata, slen);
+	resp->addHeader("Content-Type", "text/plain");
+	resp->addHeader("Content-Length", slen);
+	resp->setData((byte*)sdata, slen);
 	
-	sendResponse(cl, res, true);
+	sendResponse(cl, resp, true);
 	
-	delete res;
+	delete resp;
 }
 
 /**
@@ -468,9 +549,9 @@ void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
  * @param buf ByteBuffer containing data to be sent
  * @param disconnect Should the server disconnect the client after sending (Optional, default = false)
  */
-void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
+void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
 	// Server Header
-	res->addHeader("Server", "httpserver/1.0");
+	resp->addHeader("Server", "httpserver/1.0");
 	
 	// Time stamp the response with the Date header
 	std::string tstr;
@@ -482,46 +563,17 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* res, bool disconnect) {
 	// Ex: Fri, 31 Dec 1999 23:59:59 GMT
 	strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", ptm);
 	tstr = tbuf;
-	res->addHeader("Date", tstr);
+	resp->addHeader("Date", tstr);
 	
 	// Include a Connection: close header if this is the final response sent by the server
 	if(disconnect)
-		res->addHeader("Connection", "close");
+		resp->addHeader("Connection", "close");
 	
-	// Get raw data by creating the response (pData will be cleaned up by the response obj)
-	byte* pData = res->create();
-	
-	// Retrieve sizes
-	size_t totalSent = 0, bytesLeft = res->size(), dataLen = res->size();
-    ssize_t n = 0;
+	// Get raw data by creating the response (we are responsible for cleaning it up in process())
+	byte* pData = resp->create();
 
-	// Solution to deal with partials sends...loop till totalSent matches dataLen
-	while(totalSent < dataLen) {
-		n = send(cl->getSocket(), pData+totalSent, bytesLeft, 0);
-
-		// Client closed the connection
-		if(n < 0) {
-			std::cout << "[" << cl->getClientIP() << "] has disconnected." << std::endl;
-			disconnectClient(cl);
-			delete pData;
-			return;
-		}
-
-		// Adjust byte count after a successful send
-		totalSent += n;
-		bytesLeft -= n;
-	}
-	
-	/*cout << "[" << cl->getClientIP() << "] was sent " << totalSent << " bytes" << endl;
-	for(unsigned int i = 0; i < totalSent; i++) {
-		cout << pData[i];
-	}
-	cout << endl;*/
-	
-	if(disconnect)
-		disconnectClient(cl);
-	
-	delete pData;
+	// Add data to the Client's send queue
+	cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
 }
 
 
