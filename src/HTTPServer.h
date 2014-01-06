@@ -1,7 +1,7 @@
 /**
 	httpserver
 	HTTPServer.h
-	Copyright 2011-2012 Ramsey Kant
+	Copyright 2011-2014 Ramsey Kant
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ class HTTPServer {
     void readClient(Client* cl, int data_len);
     void writeClient(Client* cl, int avail_bytes);
 	void sendStatusResponse(Client* cl, int status, std::string msg = "");
-	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect = false);
+	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
     
     // Request handlers
     void handleRequest(Client* cl, HTTPRequest* req);

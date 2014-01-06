@@ -1,7 +1,7 @@
 /**
 	httpserver
 	HTTPServer.cpp
-	Copyright 2011-2012 Ramsey Kant
+	Copyright 2011-2014 Ramsey Kant
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -394,11 +394,11 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
     }
 
 	std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " " << req->getRequestUri() << std::endl;
-	/*cout << "Headers:" << endl;
+	/*std::cout << "Headers:" << std::endl;
 	for(int i = 0; i < req->getNumHeaders(); i++) {
-		cout << req->getHeaderStr(i) << endl;
+		std::cout << req->getHeaderStr(i) << std::endl;
 	}
-	cout << endl;*/
+	std::cout << std::endl;*/
     
     // Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
 	std::string host = req->getHeaderValue("Host");
@@ -453,9 +453,13 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) 
 		// Only send a message body if it's a GET request. Never send a body for HEAD
 		if(req->getMethod() == Method(GET))
 			resp->setData(r->getData(), r->getSize());
-			
-		// Check if the client prefers to close the connection
-		bool dc = req->getHeaderValue("Connection").compare("close") == 0;
+		
+		bool dc = false;
+
+		// If Connection: close is specified, the connection should be terminated after the request is serviced
+		std::string connection_val = req->getHeaderValue("Connection");
+		if(connection_val.compare("close") == 0)
+			dc = true;
 			
 		sendResponse(cl, resp, dc);
 		delete resp;

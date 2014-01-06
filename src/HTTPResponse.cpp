@@ -137,10 +137,10 @@ bool HTTPResponse::parse() {
 	reason = getLine(); // Pull till \r\n termination
 	
 	// Validate the HTTP version. If there is a mismatch, discontinue parsing
-	if(strcmp(version.c_str(), HTTP_VERSION) != 0) {
+	/*if(strcmp(version.c_str(), HTTP_VERSION) != 0) {
 		parseErrorStr = "Supported HTTP version does not match";
 		return false;
-	}
+	}*/
 	
 	// Parse and populate the headers map using the parseHeaders helper
 	parseHeaders();

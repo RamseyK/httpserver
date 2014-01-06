@@ -27,7 +27,7 @@ private:
 	byte* sendData;
 	unsigned int sendSize;
 	unsigned int sendOffset;
-	bool disconnect;
+	bool disconnect; // Flag indicating if the client should be disconnected after this item is dequeued
 
 public:
 	SendQueueItem(byte* data, unsigned int size, bool dc) {
