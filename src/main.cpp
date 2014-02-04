@@ -22,7 +22,7 @@
 
 #include "HTTPServer.h"
 
-HTTPServer* svr;
+static HTTPServer* svr;
 
 // Ignore signals with this function
 void handleSigPipe(int snum) {
@@ -32,7 +32,7 @@ void handleSigPipe(int snum) {
 // Termination signal handler
 void handleTermSig(int snum) {
 	svr->stop();
-	delete svr;
+	//delete svr;
 	exit(0);
 }
 

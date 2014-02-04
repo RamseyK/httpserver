@@ -25,25 +25,23 @@
 
 #include "SendQueueItem.h"
 
-#define SOCKET int
-
 typedef unsigned char byte;
 
 class Client {
-    SOCKET socketDesc; // Socket Descriptor
+    int socketDesc; // Socket Descriptor
     sockaddr_in clientAddr;
 
     std::queue<SendQueueItem*> sendQueue;
     
 public:
-    Client(SOCKET fd, sockaddr_in addr);
+    Client(int fd, sockaddr_in addr);
     ~Client();
     
     sockaddr_in getClientAddr() {
         return clientAddr;
     }
 
-    SOCKET getSocket() {
+    int getSocket() {
         return socketDesc;
     }
     
@@ -53,7 +51,8 @@ public:
 
     void addToSendQueue(SendQueueItem* item);
     unsigned int sendQueueSize();
-    SendQueueItem* nextFromSendQueue(unsigned int bytesToSend);
+    SendQueueItem* nextInSendQueue();
+    void dequeueFromSendQueue();
     void clearSendQueue();
 };
 

@@ -1,7 +1,7 @@
 /**
  ByteBuffer
  HTTPResponse.cpp
- Copyright 2011 Ramsey Kant
+ Copyright 2011-2014 Ramsey Kant
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -135,12 +135,6 @@ bool HTTPResponse::parse() {
 	statusstr = getStrElement();
 	determineStatusCode();
 	reason = getLine(); // Pull till \r\n termination
-	
-	// Validate the HTTP version. If there is a mismatch, discontinue parsing
-	/*if(strcmp(version.c_str(), HTTP_VERSION) != 0) {
-		parseErrorStr = "Supported HTTP version does not match";
-		return false;
-	}*/
 	
 	// Parse and populate the headers map using the parseHeaders helper
 	parseHeaders();

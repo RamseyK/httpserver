@@ -1,7 +1,7 @@
 /**
-	httpserver
+	ByteBuffer
 	HTTPMessage.cpp
-	Copyright 2011-2012 Ramsey Kant
+	Copyright 2011-2014 Ramsey Kant
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ void HTTPMessage::init() {
 	data = NULL;
 	dataLen = 0;
 	
-	version = HTTP_VERSION; // By default, all create() will indicate the version is whatever HTTP_VERSION is
+	version = DEFAULT_HTTP_VERSION; // By default, all create() will indicate the version is whatever DEFAULT_HTTP_VERSION is
     
     headers = new std::map<std::string, std::string>();
 }

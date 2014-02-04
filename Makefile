@@ -1,7 +1,7 @@
 # Makefile for httpserver
 # (C) Ramsey Kant 2011-2012
 
-CC := clang++
+CC := g++
 SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
@@ -10,11 +10,18 @@ TARGET := httpserver
 # Debug Flags
 DEBUGFLAGS := -g3 -O0 -Wall
 RTCHECKS := -fmudflap -fstack-check -gnato
+
 # Production Flags
 PRODFLAGS := -Wall -O2
-# Active Flags
-CFLAGS := -std=c++11 -stdlib=libc++ -Iinclude/ $(DEBUGFLAGS)
-LINK := -stdlib=libc++ $(DEBUGFLAGS)
+
+# OSX Flags
+#CFLAGS := -std=c++11 -stdlib=libc++ -Iinclude/ $(DEBUGFLAGS)
+#LINK := -stdlib=libc++ $(DEBUGFLAGS)
+
+# Linux Flags
+CFLAGS := -std=c++11 -Iinclude/ $(DEBUGFLAGS)
+LINK := -lpthread $(DEBUGFLAGS) -lkqueue
+ 
  
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))

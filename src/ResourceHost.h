@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <unordered_map>
 #include <dirent.h>
 #include <sys/types.h>

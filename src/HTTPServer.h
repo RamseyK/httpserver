@@ -24,7 +24,8 @@
 #include <string>
 
 #include <time.h>
-#include <sys/event.h> // kqueue
+#include <kqueue/sys/event.h> // kqueue Linux
+//#include <sys/event.h> // kqueue BSD
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -38,40 +39,41 @@
 #include "HTTPResponse.h"
 #include "ResourceHost.h"
 
-#define SOCKET int
 #define INVALID_SOCKET -1
 #define QUEUE_SIZE 1024
 
 class HTTPServer {
-	bool canRun;
+	bool canRun; // Controls process() event loop
 	
 	// Network
-    SOCKET listenSocket; // Descriptor for the listening socket
+    int listenSocket; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
 	int kqfd; // kqueue descriptor
-	struct kevent evlist[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
-    std::unordered_map<SOCKET, Client*> clientMap; // Client map, maps Socket descriptor to Client object
+	struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
+    std::unordered_map<int, Client*> clientMap; // Client map, maps Socket descriptor to Client object
 
 	// Resources / File System
 	std::vector<ResourceHost*> hostList; // Contains all ResourceHosts
 	std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
     
-    // Private methods
+    // Connection processing
 	void process();
     void acceptConnection();
-	Client *getClient(SOCKET clfd);
+	Client *getClient(int clfd);
 	void closeSockets();
     void disconnectClient(Client* cl, bool mapErase = true);
-    void readClient(Client* cl, int data_len);
-    void writeClient(Client* cl, int avail_bytes);
-	void sendStatusResponse(Client* cl, int status, std::string msg = "");
-	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
+    void readClient(Client* cl, int data_len); // Client read event
+    bool writeClient(Client* cl, int avail_bytes); // Client write event
     
-    // Request handlers
+    // Request handling
     void handleRequest(Client* cl, HTTPRequest* req);
 	void handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost);
 	void handleOptions(Client* cl, HTTPRequest* req);
 	void handleTrace(Client* cl, HTTPRequest* req);
+
+	// Response
+	void sendStatusResponse(Client* cl, int status, std::string msg = "");
+	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
     
 public:
     HTTPServer();

@@ -19,8 +19,15 @@
 #ifndef _SENDQUEUEITEM_H_
 #define _SENDQUEUEITEM_H_
 
+#include <cstdlib>
+
 typedef unsigned char byte;
 
+/**
+ * SendQueueItem
+ * Object represents a piece of data in a clients send queue
+ * Contains a pointer to the send buffer and tracks the current amount of data sent (by offset)
+ */
 class SendQueueItem {
 
 private:
