@@ -29,11 +29,9 @@ void handleSigPipe(int snum) {
     return;
 }
 
-// Termination signal handler
+// Termination signal handler (Ctrl-C)
 void handleTermSig(int snum) {
-	svr->stop();
-	//delete svr;
-	exit(0);
+	svr->canRun = false;
 }
 
 int main (int argc, const char * argv[])
@@ -49,12 +47,13 @@ int main (int argc, const char * argv[])
     // Instance and start the server
 	svr = new HTTPServer();
 	svr->start(8080);
+
+	// Run main event loop
+	svr->process();
 	
-	// Stop the server thread
+	// Stop the server
 	svr->stop();
 	delete svr;
     
     return 0;
 }
-
-

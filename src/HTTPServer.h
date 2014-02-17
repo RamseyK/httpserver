@@ -24,8 +24,6 @@
 #include <string>
 
 #include <time.h>
-#include <kqueue/sys/event.h> // kqueue Linux
-//#include <sys/event.h> // kqueue BSD
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -33,6 +31,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <fcntl.h>
+
+#ifdef __linux__
+#include <kqueue/sys/event.h> // libkqueue Linux
+#else
+#include <sys/event.h> // kqueue BSD / OS X
+#endif
 
 #include "Client.h"
 #include "HTTPRequest.h"
@@ -42,25 +46,28 @@
 #define INVALID_SOCKET -1
 #define QUEUE_SIZE 1024
 
-class HTTPServer {
-	bool canRun; // Controls process() event loop
-	
-	// Network
+class HTTPServer {	
+	// Server Socket
+	int listenPort;
     int listenSocket; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
+
+    // Kqueue
+    struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
 	int kqfd; // kqueue descriptor
 	struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
-    std::unordered_map<int, Client*> clientMap; // Client map, maps Socket descriptor to Client object
+
+	// Client map, maps Socket descriptor to Client object
+    std::unordered_map<int, Client*> clientMap;
 
 	// Resources / File System
 	std::vector<ResourceHost*> hostList; // Contains all ResourceHosts
 	std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
     
     // Connection processing
-	void process();
+    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void *udata);
     void acceptConnection();
 	Client *getClient(int clfd);
-	void closeSockets();
     void disconnectClient(Client* cl, bool mapErase = true);
     void readClient(Client* cl, int data_len); // Client read event
     bool writeClient(Client* cl, int avail_bytes); // Client write event
@@ -76,11 +83,17 @@ class HTTPServer {
 	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
     
 public:
+	bool canRun;
+
+public:
     HTTPServer();
     ~HTTPServer();
 
-	void start(int port);
+	bool start(int port);
 	void stop();
+
+	// Main event loop
+	void process();
 };
 
 #endif

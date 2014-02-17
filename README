@@ -1,9 +1,9 @@
 HTTP Server
 Ramsey Kant
 
-https://github.com/RamseyK
+https://github.com/RamseyK/httpserver
 
-I am writing this HTTP server as a learning tool with a focus on performance.
+A high performance, single threaded, HTTP server written in C++ as a learning tool
 
 Features:
 -Clean, documented code
@@ -11,7 +11,7 @@ Features:
 -Easy to understand HTTP protocol parser (from my ByteBuffer project)
 -Runs on Linux*, FreeBSD, OS X
 
-* When compiling on Linux, you must link with pthreads & libkqueue
+* When compiling on Linux, you must link with pthreads & libkqueue. See Makefile
 
 Benchmarks:
 Coming soon!

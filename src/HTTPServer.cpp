@@ -43,7 +43,8 @@ HTTPServer::HTTPServer() {
 HTTPServer::~HTTPServer() {
 	// Loop through hostList and delete all ResourceHosts
 	while(!hostList.empty()) {
-		delete hostList.back();
+		ResourceHost* resHost = hostList.back();
+		delete resHost;
 		hostList.pop_back();
 	}
 	vhosts.clear();
@@ -56,14 +57,15 @@ HTTPServer::~HTTPServer() {
  * @param port Port to listen on
  * @return True if initialization succeeded. False if otherwise
  */
-void HTTPServer::start(int port) {    
-	canRun = false;
+bool HTTPServer::start(int port) {
+	canRun = false;    
+	listenPort = port;
 
 	// Create a handle for the listening socket, TCP
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(listenSocket == INVALID_SOCKET) {
 		std::cout << "Could not create socket!" << std::endl;
-		return;
+		return false;
 	}
 	
 	// Set socket as non blocking
@@ -73,50 +75,60 @@ void HTTPServer::start(int port) {
 	// modify to support multiple address families (bottom): http://eradman.com/posts/kqueue-tcp.html
     memset(&serverAddr, 0, sizeof(struct sockaddr_in)); // clear the struct
 	serverAddr.sin_family = AF_INET; // Family: IP protocol
-	serverAddr.sin_port = htons(port); // Set the port (convert from host to netbyte order)
+	serverAddr.sin_port = htons(listenPort); // Set the port (convert from host to netbyte order)
 	serverAddr.sin_addr.s_addr = INADDR_ANY; // Let OS intelligently select the server's host address
     
 	// Bind: Assign the address to the socket
 	if(bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
 		std::cout << "Failed to bind to the address!" << std::endl;
-		return;
+		return false;
 	}
     
 	// Listen: Put the socket in a listening state, ready to accept connections
 	// Accept a backlog of the OS Maximum connections in the queue
 	if(listen(listenSocket, SOMAXCONN) != 0) {
 		std::cout << "Failed to put the socket in a listening state" << std::endl;
-		return;
+		return false;
 	}
     
 	// Setup kqueue
 	kqfd = kqueue();
 	if(kqfd == -1) {
 		std::cout << "Could not create the kernel event queue!" << std::endl;
-		return;
+		return false;
 	}
 	
 	// Have kqueue watch the listen socket
-	struct kevent kev;
-	EV_SET(&kev, listenSocket, EVFILT_READ, EV_ADD, 0, 0, NULL); // Fills kev
-	kevent(kqfd, &kev, 1, NULL, 0, NULL);
+	updateEvent(listenSocket, EVFILT_READ, EV_ADD, 0, 0, NULL);
 
-	std::cout << "Server started. Listening on port " << port << "..." << std::endl;
-
-	// Start processing
 	canRun = true;
-	process();
+	std::cout << "Server ready. Listening on port " << listenPort << "..." << std::endl;
+	return true;
 }
 
 /**
  * Stop
- * Cleanup all server resources created in start()
+ * Disconnect all clients and cleanup all server resources created in start()
  */
 void HTTPServer::stop() {
 	canRun = false;
 
-	if(listenSocket != INVALID_SOCKET)
-	    closeSockets();
+	if(listenSocket != INVALID_SOCKET) {
+	    // Close all open connections and delete Client's from memory
+	    for(auto& x : clientMap)
+	        disconnectClient(x.second, false);
+	    
+	    // Clear the map
+	    clientMap.clear();
+
+		// Remove listening socket from kqueue
+		updateEvent(listenSocket, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+	    
+	    // Shudown the listening socket and release it to the OS
+		shutdown(listenSocket, SHUT_RDWR);
+		close(listenSocket);
+		listenSocket = INVALID_SOCKET;
+	}
 
 	if(kqfd != -1) {
 		close(kqfd);
@@ -127,26 +139,76 @@ void HTTPServer::stop() {
 }
 
 /**
- * Close Sockets
- * Disconnect and delete all clients in the client map. Shutdown the listening socket
+ * Update Event
+ * Update the kqueue by creating the appropriate kevent structure
+ * See kqueue documentation for parameter descriptions
  */
-void HTTPServer::closeSockets() {
-    // Close all open connections and delete Client's from memory
-    for(auto& x : clientMap)
-        disconnectClient(x.second, false);
-    
-    // Clear the map
-    clientMap.clear();
-
-	// Remove listening socket from kqueue
+void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void *udata) {
 	struct kevent kev;
-	EV_SET(&kev, listenSocket, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+	EV_SET(&kev, ident, filter, flags, fflags, data, udata);
 	kevent(kqfd, &kev, 1, NULL, 0, NULL);
-    
-    // Shudown the listening socket and release it to the OS
-	shutdown(listenSocket, SHUT_RDWR);
-	close(listenSocket);
-	listenSocket = INVALID_SOCKET;
+}
+
+/**
+ * Server Process
+ * Main server processing function that checks for any new connections or data to read on
+ * the listening socket
+ */
+void HTTPServer::process() {
+	int nev = 0; // Number of changed events returned by kevent
+	Client* cl = NULL;
+	struct kevent read_kev, write_kev;
+
+	while(canRun) {
+		// Get a list of changed socket descriptors with a read event triggered in evList
+		// Timeout set in the header
+		nev = kevent(kqfd, NULL, 0, evList, QUEUE_SIZE, &kqTimeout);
+		
+		if(nev <= 0)
+			continue;
+
+	    // Loop through only the sockets that have changed in the evList array
+	    for(int i = 0; i < nev; i++) {
+	        if(evList[i].ident == (unsigned int)listenSocket) { // A client is waiting to connect
+	            acceptConnection();
+	        } else { // Client descriptor has triggered an event
+				cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
+				if(cl == NULL) {
+					std::cout << "Could not find client" << std::endl;
+					continue;
+				}
+
+				// Client wants to disconnect
+				if(evList[i].flags & EV_EOF) {
+					disconnectClient(cl);
+					continue;
+				}
+
+				// Clear kevent structures
+				memset(&read_kev, 0, sizeof(struct kevent));
+				memset(&write_kev, 0, sizeof(struct kevent));
+
+				if(evList[i].filter == EVFILT_READ) {
+					//std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
+					// Read and process any pending data on the wire
+	            	readClient(cl, evList[i].data); // data contains the number of bytes waiting to be read
+
+					// Have kqueue disable tracking of READ events and enable tracking of WRITE events
+					updateEvent(evList[i].ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+					updateEvent(evList[i].ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+				} else if(evList[i].filter == EVFILT_WRITE) {
+					//std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
+					// Write any pending data to the client - writeClient returns true if there is additional data to send in the client queue
+					if(!writeClient(cl, evList[i].data)) { // data contains number of bytes that can be written
+						//std::cout << "switch back to read filter" << std::endl;
+						// If theres nothing more to send, Have kqueue disable tracking of WRITE events and enable tracking of READ events
+						updateEvent(evList[i].ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+						updateEvent(evList[i].ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+					}
+				}
+	        }
+	    } // Event loop
+	} // canRun
 }
 
 /**
@@ -171,87 +233,15 @@ void HTTPServer::acceptConnection() {
     // Instance Client object
     Client *cl = new Client(clfd, clientAddr);
     
-	// Add kqueue event to track the new client socket for READ events (enabled)
-	struct kevent read_kev;
-	EV_SET(&read_kev, clfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL); // Fills read_kev
-	kevent(kqfd, &read_kev, 1, NULL, 0, NULL);
-
-	// Add kqueue event to track the new client socket for WRITE events (disabled)
-	struct kevent write_kev;
-	EV_SET(&write_kev, clfd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL); // Fills write_kev
-	kevent(kqfd, &write_kev, 1, NULL, 0, NULL);
+	// Add kqueue event to track the new client socket for READ and WRITE events
+	updateEvent(clfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	updateEvent(clfd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL); // Disabled initially
     
     // Add the client object to the client map
     clientMap.insert(std::pair<int, Client*>(clfd, cl));
     
     // Print the client's IP on connect
 	std::cout << "[" << cl->getClientIP() << "] connected" << std::endl;
-}
-
-/**
- * Server Process
- * Main server processing function that checks for any new connections or data to read on
- * the listening socket
- */
-void HTTPServer::process() {
-	int nev = 0; // Number of changed events returned by kevent
-	Client* cl = NULL;
-	struct kevent read_kev, write_kev;
-	
-	while(canRun) {
-		// Get a list of changed socket descriptors with a read event triggered in evList
-		// Timeout is NULL, kevent will wait for a change before returning
-		nev = kevent(kqfd, NULL, 0, evList, QUEUE_SIZE, NULL);
-		
-		if(nev <= 0)
-			continue;
-
-        // Loop through only the sockets that have changed in the evList array
-        for(int i = 0; i < nev; i++) {
-            if(evList[i].ident == (unsigned int)listenSocket) { // A client is waiting to connect
-                acceptConnection();
-            } else { // Client descriptor has triggered an event
-				cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
-				if(cl == NULL) {
-					std::cout << "Could not find client" << std::endl;
-					continue;
-				}
-
-				// Client wants to disconnect
-				if(evList[i].flags & EV_EOF) {
-					disconnectClient(cl);
-					continue;
-				}
-
-				// Clear kevent structures
-				memset(&read_kev, 0, sizeof(struct kevent));
-				memset(&write_kev, 0, sizeof(struct kevent));
-
-				if(evList[i].filter == EVFILT_READ) {
-					//std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
-					// Read and process any pending data on the wire
-                	readClient(cl, evList[i].data); // data contains the number of bytes waiting to be read
-
-					// Have kqueue disable tracking of READ events and enable tracking of WRITE events
-					EV_SET(&read_kev, evList[i].ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-					EV_SET(&write_kev, evList[i].ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
-					kevent(kqfd, &read_kev, 1, NULL, 0, NULL);
-					kevent(kqfd, &write_kev, 1, NULL, 0, NULL);
-				} else if((evList[i].filter == EVFILT_WRITE)) {
-					//std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
-					// Write any pending data to the client - writeClient returns true if there is additional data to send in the client queue
-					if(!writeClient(cl, evList[i].data)) { // data contains number of bytes that can be written
-						//std::cout << "switch back to read filter" << std::endl;
-						// If theres nothing more to send, Have kqueue disable tracking of WRITE events and enable tracking of READ events
-						EV_SET(&read_kev, evList[i].ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
-						EV_SET(&write_kev, evList[i].ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-						kevent(kqfd, &write_kev, 1, NULL, 0, NULL);
-						kevent(kqfd, &read_kev, 1, NULL, 0, NULL);
-					}
-				}
-            }
-        } // Pending event loop
-	} // Main while
 }
 
 /**
@@ -288,11 +278,8 @@ void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
     std::cout << "[" << cl->getClientIP() << "] disconnected" << std::endl;
 
     // Remove socket events from kqueue
-    struct kevent read_kev, write_kev;
-	EV_SET(&read_kev, cl->getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
-	EV_SET(&write_kev, cl->getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-	kevent(kqfd, &read_kev, 1, NULL, 0, NULL);
-	kevent(kqfd, &write_kev, 1, NULL, 0, NULL);
+	updateEvent(cl->getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+	updateEvent(cl->getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     
     // Close the socket descriptor
     close(cl->getSocket());

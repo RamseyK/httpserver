@@ -6,6 +6,7 @@ SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
 TARGET := httpserver
+UNAME := $(shell uname)
 
 # Debug Flags
 DEBUGFLAGS := -g3 -O0 -Wall
@@ -14,13 +15,15 @@ RTCHECKS := -fmudflap -fstack-check -gnato
 # Production Flags
 PRODFLAGS := -Wall -O2
 
-# OSX Flags
-#CFLAGS := -std=c++11 -stdlib=libc++ -Iinclude/ $(DEBUGFLAGS)
-#LINK := -stdlib=libc++ $(DEBUGFLAGS)
-
+ifeq ($(UNAME), Linux)
 # Linux Flags
 CFLAGS := -std=c++11 -Iinclude/ $(DEBUGFLAGS)
-LINK := -lpthread $(DEBUGFLAGS) -lkqueue
+LINK := -lpthread -lkqueue $(DEBUGFLAGS)
+else
+# OSX / BSD Flags
+CFLAGS := -std=c++11 -stdlib=libc++ -Iinclude/ $(DEBUGFLAGS)
+LINK := -stdlib=libc++ $(DEBUGFLAGS)
+endif
  
  
 SRCEXT := cpp
