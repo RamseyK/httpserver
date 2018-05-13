@@ -21,19 +21,32 @@
 /**
  * Server Constructor
  * Initialize state and server variables
+ *
+ * @param vhost Name of the primary Host the HTTP server will respond to
+ * @param port Port the vhost listens on
+ * @param diskpath Path to the folder the vhost serves up
  */
-HTTPServer::HTTPServer() {
+HTTPServer::HTTPServer(std::string vhost, int port, std::string diskpath) {
 	canRun = false;
 	listenSocket = INVALID_SOCKET;
+	listenPort = port;
+
+	// TODO: Eventually we should allow the config to specify multiple vhosts with their own diskpaths
+	printf("Primary vhost: %s, port: %i, disk path: %s\n", vhost.c_str(), port, diskpath.c_str());
 
 	// Create a resource host serving the base path ./htdocs on disk
-    ResourceHost* resHost = new ResourceHost("./htdocs");
+    ResourceHost* resHost = new ResourceHost(diskpath);
 	hostList.push_back(resHost);
 
-	// Setup the resource host serving htdocs to provide for the following vhosts:
-	vhosts.insert(std::pair<std::string, ResourceHost*>("localhost:8080", resHost));
-	vhosts.insert(std::pair<std::string, ResourceHost*>("127.0.0.1:8080", resHost));
-	vhosts.insert(std::pair<std::string, ResourceHost*>("192.168.1.59:8080", resHost));
+	// Setup the resource host serving htdocs to provide for the following vhosts
+	// Use the primary vhost to also serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
+	char tmpstr[32];
+	sprintf(tmpstr, "localhost:%i", listenPort);
+	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+	sprintf(tmpstr, "127.0.0.1:%i", listenPort);
+	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+	sprintf(tmpstr, "%s:%i", vhost.c_str(), listenPort);
+	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 }
 
 /**
@@ -54,12 +67,10 @@ HTTPServer::~HTTPServer() {
  * Start Server
  * Initialize the Server Socket by requesting a socket handle, binding, and going into a listening state
  *
- * @param port Port to listen on
  * @return True if initialization succeeded. False if otherwise
  */
-bool HTTPServer::start(int port) {
-	canRun = false;    
-	listenPort = port;
+bool HTTPServer::start() {
+	canRun = false;
 
 	// Create a handle for the listening socket, TCP
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -252,8 +263,7 @@ void HTTPServer::acceptConnection() {
  * @return Pointer to Client object if found. NULL otherwise
  */
 Client* HTTPServer::getClient(int clfd) {
-	std::unordered_map<int, Client*>::const_iterator it;
-    it = clientMap.find(clfd);
+    auto it = clientMap.find(clfd);
 
 	// Client wasn't found
 	if(it == clientMap.end())
@@ -555,7 +565,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
 	sendResponse(cl, resp, true);
 	
 	delete resp;
-	delete buf;
+	delete[] buf;
 }
 
 /**

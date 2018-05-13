@@ -18,9 +18,12 @@
 
 #include <iostream>
 #include <string>
+#include <unordered_map>
+#include <fstream>
 #include <signal.h>
 
 #include "HTTPServer.h"
+#include "ResourceHost.h"
 
 static HTTPServer* svr;
 
@@ -36,6 +39,37 @@ void handleTermSig(int snum) {
 
 int main (int argc, const char * argv[])
 {
+	// Parse config file
+	std::map<std::string, std::string> config;
+	std::fstream cfile;
+	std::string line, key, val;
+	int epos;
+	cfile.open("server.config");
+	if (!cfile.is_open()) {
+		printf("Unable to open server.config file in working directory\n");
+		return -1;
+	}
+	while (getline(cfile, line)) {
+		// Skip lines beginning with a #
+		if (line.rfind("#", 0) == 0)
+			continue;
+
+		epos = line.find("=");
+		key = line.substr(0, epos);
+		val = line.substr(epos+1, line.length());
+		config.insert(std::pair<std::string, std::string> (key, val));
+	}
+	cfile.close();
+
+	// Validate at least vhost, port, and diskpath are present
+	auto it_vhost = config.find("vhost");
+	auto it_port = config.find("port");
+	auto it_path = config.find("diskpath");
+	if (it_vhost == config.end() || it_port == config.end() || it_path == config.end()) {
+		printf("vhost, port, and diskpath must be supplied in the config, at a minimum\n");
+		return -1;
+	}
+
     // Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
     signal(SIGPIPE, handleSigPipe);
 
@@ -45,8 +79,8 @@ int main (int argc, const char * argv[])
 	signal(SIGTERM, &handleTermSig);
 
     // Instance and start the server
-	svr = new HTTPServer();
-	svr->start(8080);
+	svr = new HTTPServer(config["vhost"], atoi(config["port"].c_str()), config["diskpath"]);
+	svr->start();
 
 	// Run main event loop
 	svr->process();

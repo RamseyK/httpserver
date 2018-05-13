@@ -34,9 +34,8 @@
 
 // Valid files to serve as an index of a directory
 const static char* const validIndexes[] = {
-	"index.html", // 0
-	"index.htm", // 1
-	//"index.php", // 2
+	"index.html",
+	"index.htm"
 };
 
 class ResourceHost {

@@ -86,10 +86,10 @@ public:
 	bool canRun;
 
 public:
-    HTTPServer();
+    HTTPServer(std::string vhost, int port, std::string diskpath);
     ~HTTPServer();
 
-	bool start(int port);
+	bool start();
 	void stop();
 
 	// Main event loop

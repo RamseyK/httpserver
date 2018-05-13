@@ -28,7 +28,7 @@ Resource::Resource(std::string loc, bool dir) {
 
 Resource::~Resource() {
 	if(data != NULL) {
-		delete data;
+		delete [] data;
 		data = NULL;
 	}
 }

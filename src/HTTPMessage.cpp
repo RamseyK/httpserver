@@ -295,8 +295,7 @@ void HTTPMessage::addHeader(std::string key, int value) {
  */
 std::string HTTPMessage::getHeaderValue(std::string key) {
     // Lookup in map
-    std::map<std::string, std::string>::const_iterator it;
-    it = headers->find(key);
+    auto it = headers->find(key);
     
     // Key wasn't found, return a blank value
     if (it == headers->end())
