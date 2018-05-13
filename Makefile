@@ -9,20 +9,19 @@ TARGET := httpserver
 UNAME := $(shell uname)
 
 # Debug Flags
-DEBUGFLAGS := -g3 -O0 -Wall
-RTCHECKS := -fmudflap -fstack-check -gnato
+DEBUGFLAGS := -g3 -O0 -Wall -fmudflap
 
 # Production Flags
-PRODFLAGS := -Wall -O2
+PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
 
 ifeq ($(UNAME), Linux)
 # Linux Flags
-CFLAGS := -std=c++11 -Iinclude/ $(DEBUGFLAGS)
-LINK := -lpthread -lkqueue $(DEBUGFLAGS)
+CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
+LINK := -lpthread -lkqueue $(PRODFLAGS)
 else
 # OSX / BSD Flags
-CFLAGS := -std=c++11 -stdlib=libc++ -Iinclude/ $(DEBUGFLAGS)
-LINK := -stdlib=libc++ $(DEBUGFLAGS)
+CFLAGS := -std=c++14 -stdlib=libc++ -Iinclude/ $(PRODFLAGS)
+LINK := -stdlib=libc++ $(PRODFLAGS)
 endif
  
  
