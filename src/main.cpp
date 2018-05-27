@@ -46,7 +46,7 @@ int main (int argc, const char * argv[])
 	int epos;
 	cfile.open("server.config");
 	if (!cfile.is_open()) {
-		printf("Unable to open server.config file in working directory\n");
+		std::cout << "Unable to open server.config file in working directory" << std::endl;
 		return -1;
 	}
 	while (getline(cfile, line)) {
@@ -66,7 +66,7 @@ int main (int argc, const char * argv[])
 	auto it_port = config.find("port");
 	auto it_path = config.find("diskpath");
 	if (it_vhost == config.end() || it_port == config.end() || it_path == config.end()) {
-		printf("vhost, port, and diskpath must be supplied in the config, at a minimum\n");
+		std::cout << "vhost, port, and diskpath must be supplied in the config, at a minimum" << std::endl;
 		return -1;
 	}
 
@@ -93,7 +93,11 @@ int main (int argc, const char * argv[])
 
     // Instance and start the server
 	svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"]);
-	svr->start();
+	if (!svr->start()) {
+		svr->stop();
+		delete svr;
+		return -1;
+	}
 
 	// Run main event loop
 	svr->process();

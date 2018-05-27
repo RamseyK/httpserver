@@ -31,14 +31,14 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
 	listenSocket = INVALID_SOCKET;
 	listenPort = port;
 
-	printf("Primary port: %i, disk path: %s\n", port, diskpath.c_str());
+	std::cout << "Primary port: " << port << ", disk path: " << diskpath.c_str() << std::endl;
 
 	// Create a resource host serving the base path ./htdocs on disk
     ResourceHost* resHost = new ResourceHost(diskpath);
 	hostList.push_back(resHost);
 
 	// Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
-	char tmpstr[32];
+	char tmpstr[128];
 	sprintf(tmpstr, "localhost:%i", listenPort);
 	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 	sprintf(tmpstr, "127.0.0.1:%i", listenPort);
@@ -46,7 +46,12 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
 
 	// Setup the resource host serving htdocs to provide for the vhost aliases
 	for (std::string vh : vhost_aliases) {
-		printf("vhost: %s\n", vh.c_str());
+		if ((vh.length() - 6) >= 128) {
+			std::cout << "vhost " << vh << " too long, skipping!" << std::endl;
+			continue;
+		}
+
+		std::cout << "vhost: " << vh << std::endl;
 		sprintf(tmpstr, "%s:%i", vh.c_str(), listenPort);
 		vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 	}
