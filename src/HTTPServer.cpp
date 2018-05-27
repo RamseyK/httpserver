@@ -30,6 +30,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
 	canRun = false;
 	listenSocket = INVALID_SOCKET;
 	listenPort = port;
+	kqfd = -1;
 
 	std::cout << "Primary port: " << port << ", disk path: " << diskpath.c_str() << std::endl;
 
