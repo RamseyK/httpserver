@@ -70,6 +70,19 @@ int main (int argc, const char * argv[])
 		return -1;
 	}
 
+	// Break vhost into a comma separated list (if there are multiple vhost aliases)
+	std::vector<std::string> vhosts;
+	std::string vhost_alias_str = config["vhost"];
+	std::string delimiter = ",";
+	std::string token;
+	size_t pos = vhost_alias_str.find(delimiter);
+	do {
+		pos = vhost_alias_str.find(delimiter);
+		token = vhost_alias_str.substr(0, pos);
+		vhosts.push_back(token);
+		vhost_alias_str.erase(0, pos+delimiter.length());
+	} while (pos != std::string::npos);
+
     // Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
     signal(SIGPIPE, handleSigPipe);
 
@@ -79,7 +92,7 @@ int main (int argc, const char * argv[])
 	signal(SIGTERM, &handleTermSig);
 
     // Instance and start the server
-	svr = new HTTPServer(config["vhost"], atoi(config["port"].c_str()), config["diskpath"]);
+	svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"]);
 	svr->start();
 
 	// Run main event loop

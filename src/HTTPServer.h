@@ -86,7 +86,7 @@ public:
 	bool canRun;
 
 public:
-    HTTPServer(std::string vhost, int port, std::string diskpath);
+    HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath);
     ~HTTPServer();
 
 	bool start();

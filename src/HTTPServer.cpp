@@ -22,31 +22,34 @@
  * Server Constructor
  * Initialize state and server variables
  *
- * @param vhost Name of the primary Host the HTTP server will respond to
+ * @param vhost_aliases List of hostnames the HTTP server will respond to
  * @param port Port the vhost listens on
  * @param diskpath Path to the folder the vhost serves up
  */
-HTTPServer::HTTPServer(std::string vhost, int port, std::string diskpath) {
+HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath) {
 	canRun = false;
 	listenSocket = INVALID_SOCKET;
 	listenPort = port;
 
-	// TODO: Eventually we should allow the config to specify multiple vhosts with their own diskpaths
-	printf("Primary vhost: %s, port: %i, disk path: %s\n", vhost.c_str(), port, diskpath.c_str());
+	printf("Primary port: %i, disk path: %s\n", port, diskpath.c_str());
 
 	// Create a resource host serving the base path ./htdocs on disk
     ResourceHost* resHost = new ResourceHost(diskpath);
 	hostList.push_back(resHost);
 
-	// Setup the resource host serving htdocs to provide for the following vhosts
-	// Use the primary vhost to also serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
+	// Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
 	char tmpstr[32];
 	sprintf(tmpstr, "localhost:%i", listenPort);
 	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 	sprintf(tmpstr, "127.0.0.1:%i", listenPort);
 	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
-	sprintf(tmpstr, "%s:%i", vhost.c_str(), listenPort);
-	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+
+	// Setup the resource host serving htdocs to provide for the vhost aliases
+	for (std::string vh : vhost_aliases) {
+		printf("vhost: %s\n", vh.c_str());
+		sprintf(tmpstr, "%s:%i", vh.c_str(), listenPort);
+		vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+	}
 }
 
 /**
