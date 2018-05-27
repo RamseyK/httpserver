@@ -140,36 +140,36 @@ std::string ResourceHost::generateDirList(std::string path) {
 	std::string uri = "?";
 	if(uri_pos != std::string::npos)
 		uri = path.substr(uri_pos);
-	
+
 	std::stringstream ret;
 	ret << "<html><head><title>" << uri << "</title></head><body>";
-	
-    DIR *dir;
-    struct dirent *ent;
 
-    dir = opendir(path.c_str());
-    if(dir == NULL)
-        return "";
+	DIR *dir;
+	struct dirent *ent;
+
+	dir = opendir(path.c_str());
+	if(dir == NULL)
+		return "";
 
 	// Page title, displaying the URI of the directory being listed
 	ret << "<h1>Index of " << uri << "</h1><hr /><br />";
-    
-    // Add all files and directories to the return
-    while((ent = readdir(dir)) != NULL) {
+
+	// Add all files and directories to the return
+	while((ent = readdir(dir)) != NULL) {
 		// Skip any 'hidden' files (starting with a '.')
 		if(ent->d_name[0] == '.')
 			continue;
-	
+
 		// Display link to object in directory:
-        ret << "<a href=\"" << uri << ent->d_name << "\">" << ent->d_name << "</a><br />";
+	    ret << "<a href=\"" << uri << ent->d_name << "\">" << ent->d_name << "</a><br />";
 	}
-    
-    // Close the directory
-    closedir(dir);
+
+	// Close the directory
+	closedir(dir);
 
 	ret << "</body></html>";
-    
-    return ret.str();
+
+	return ret.str();
 }
 
 /**

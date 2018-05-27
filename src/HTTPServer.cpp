@@ -232,29 +232,29 @@ void HTTPServer::process() {
  */
 void HTTPServer::acceptConnection() {
     // Setup new client with prelim address info
-    sockaddr_in clientAddr;
-    int clientAddrLen = sizeof(clientAddr);
-    int clfd = INVALID_SOCKET;
-    
-    // Accept the pending connection and retrive the client descriptor
-    clfd = accept(listenSocket, (sockaddr*)&clientAddr, (socklen_t*)&clientAddrLen);
-    if(clfd == INVALID_SOCKET)
-        return;
+	sockaddr_in clientAddr;
+	int clientAddrLen = sizeof(clientAddr);
+	int clfd = INVALID_SOCKET;
+
+	// Accept the pending connection and retrive the client descriptor
+	clfd = accept(listenSocket, (sockaddr*)&clientAddr, (socklen_t*)&clientAddrLen);
+	if(clfd == INVALID_SOCKET)
+	    return;
 
 	// Set socket as non blocking
 	fcntl(clfd, F_SETFL, O_NONBLOCK);
-    
-    // Instance Client object
-    Client *cl = new Client(clfd, clientAddr);
-    
+
+	// Instance Client object
+	Client *cl = new Client(clfd, clientAddr);
+
 	// Add kqueue event to track the new client socket for READ and WRITE events
 	updateEvent(clfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	updateEvent(clfd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL); // Disabled initially
-    
-    // Add the client object to the client map
-    clientMap.insert(std::pair<int, Client*>(clfd, cl));
-    
-    // Print the client's IP on connect
+
+	// Add the client object to the client map
+	clientMap.insert(std::pair<int, Client*>(clfd, cl));
+
+	// Print the client's IP on connect
 	std::cout << "[" << cl->getClientIP() << "] connected" << std::endl;
 }
 
@@ -314,37 +314,37 @@ void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
  * @param data_len Number of bytes waiting to be read
  */
 void HTTPServer::readClient(Client *cl, int data_len) {
-    if (cl == NULL)
-        return;
+	if (cl == NULL)
+	    return;
 
-    // If the read filter triggered with 0 bytes of data, client may want to disconnect
-    // Set data_len to the Ethernet max MTU by default
-    if(data_len <= 0)
-    	data_len = 1400;
-    
+	// If the read filter triggered with 0 bytes of data, client may want to disconnect
+	// Set data_len to the Ethernet max MTU by default
+	if(data_len <= 0)
+		data_len = 1400;
+
 	HTTPRequest* req;
-    char* pData = new char[data_len];
-    
-    // Receive data on the wire into pData
-    /* TODO: Figure out what flags need to be set */
-    int flags = 0; 
-    ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
-    
-    // Determine state of the client socket and act on it
-    if(lenRecv == 0) {
-        // Client closed the connection
+	char* pData = new char[data_len];
+
+	// Receive data on the wire into pData
+	/* TODO: Figure out what flags need to be set */
+	int flags = 0; 
+	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
+
+	// Determine state of the client socket and act on it
+	if(lenRecv == 0) {
+		// Client closed the connection
 		std::cout << "[" << cl->getClientIP() << "] has opted to close the connection" << std::endl;
-        disconnectClient(cl);
-    } else if(lenRecv < 0) {
-        // Something went wrong with the connection
-        // TODO: check perror() for the specific error message
-        disconnectClient(cl);
-    } else {
-        // Data received: Place the data in an HTTPRequest and pass it to handleRequest for processing
+		disconnectClient(cl);
+	} else if(lenRecv < 0) {
+		// Something went wrong with the connection
+		// TODO: check perror() for the specific error message
+		disconnectClient(cl);
+	} else {
+		// Data received: Place the data in an HTTPRequest and pass it to handleRequest for processing
 		req = new HTTPRequest((byte*)pData, lenRecv);
-        handleRequest(cl, req);
+		handleRequest(cl, req);
 		delete req;
-    }
+	}
 
 	delete [] pData;
 }
@@ -357,8 +357,8 @@ void HTTPServer::readClient(Client *cl, int data_len) {
  * @param avail_bytes Number of bytes available for writing in the send buffer
  */
 bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
-    if (cl == NULL)
-        return false;
+	if (cl == NULL)
+		return false;
 
 	int actual_sent = 0; // Actual number of bytes sent as returned by send()
 	int attempt_sent = 0; // Bytes that we're attempting to send now
@@ -398,7 +398,7 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
 		item->setOffset(item->getOffset() + actual_sent);
 	else
 		disconnect = true;
-	
+
 	//std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
 
 	// SendQueueItem isnt needed anymore. Dequeue and delete
