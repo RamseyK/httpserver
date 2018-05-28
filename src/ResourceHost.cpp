@@ -123,6 +123,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
 	strncpy(sdata, listing.c_str(), slen);
 	
 	res = new Resource(path, true);
+	res->setMimeType("text/html");
 	res->setData((byte*)sdata, slen);
 	
 	return res;
