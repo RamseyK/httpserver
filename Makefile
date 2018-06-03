@@ -20,8 +20,8 @@ CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
 LINK := -lpthread -lkqueue $(PRODFLAGS)
 else
 # OSX / BSD Flags
-CFLAGS := -std=c++14 -stdlib=libc++ -Iinclude/ $(PRODFLAGS)
-LINK := -stdlib=libc++ $(PRODFLAGS)
+CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
+LINK := $(PRODFLAGS)
 endif
  
  
@@ -30,7 +30,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 $(TARGET): $(OBJECTS)
-	@echo " Linking..."; $(CC) $(LINK) $^ -o $(BINDIR)/$(TARGET)
+	@echo " Linking..."; $(CC) $^ $(LINK) -o $(BINDIR)/$(TARGET)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
