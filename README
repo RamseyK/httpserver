@@ -3,15 +3,13 @@ Ramsey Kant
 
 https://github.com/RamseyK/httpserver
 
-A high performance, single threaded, HTTP server written in C++ as a learning tool
+A high performance, single threaded, HTTP server written in C++ to serve as a kqueue socket management and HTTP protocol learning tool
 
 Features:
 -Clean, documented code
 -Efficient socket management with kqueue
 -Easy to understand HTTP protocol parser (from my ByteBuffer project)
--Runs on Linux*, FreeBSD, OS X
-
-* When compiling on Linux, you must link with pthreads & libkqueue. See Makefile
+-Tested on FreeBSD and MacOS
 
 Benchmarks:
 Coming soon!
