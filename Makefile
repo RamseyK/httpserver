@@ -14,15 +14,16 @@ DEBUGFLAGS := -g3 -O0 -Wall -fmudflap
 # Production Flags
 PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
 
-ifeq ($(UNAME), Linux)
-# Linux Flags
-CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
-LINK := -lpthread -lkqueue $(PRODFLAGS)
-else
+# No longer supported
+# ifeq ($(UNAME), Linux)
+# # Linux Flags
+# CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
+# LINK := -lpthread -lkqueue $(PRODFLAGS)
+# else
 # OSX / BSD Flags
 CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
 LINK := $(PRODFLAGS)
-endif
+# endif
  
  
 SRCEXT := cpp
