@@ -464,8 +464,12 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 
 	// ResourceHost couldnt be determined or the Host specified by the client was invalid
 	if(resHost == NULL) {
-		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
-		return;
+		std::cout << "[" << cl->getClientIP() << "] " << "Warning - Unknown vhost specified: " << host << std::endl;
+
+		// TODO: Handle this properly
+		resHost = hostList[0];
+		// sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
+		// return;
 	}
     
     // Send the request to the correct handler function
@@ -501,6 +505,8 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) 
     Resource* r = resHost->getResource(uri);
 
 	if(r != NULL) { // Exists
+		std::cout << "[" << cl->getClientIP() << "] " << "Sending file: " << uri << std::endl;
+
 		HTTPResponse* resp = new HTTPResponse();
 		resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", r->getMimeType());
@@ -525,6 +531,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) 
 		delete resp;
 		delete r;
 	} else { // Not found
+		std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
 		sendStatusResponse(cl, Status(NOT_FOUND));
 	}
 }
