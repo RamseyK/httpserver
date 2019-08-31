@@ -1,7 +1,7 @@
 # Makefile for httpserver
 # (C) Ramsey Kant 2011-2012
 
-CC := g++
+CC := clang++
 SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
