@@ -40,37 +40,37 @@ const static char* const validIndexes[] = {
 
 class ResourceHost {
 private:
-    // Local file system base path
-    std::string baseDiskPath;
+	// Local file system base path
+	std::string baseDiskPath;
 
 	// Dictionary that relates file extensions to their MIME type
 	std::unordered_map<std::string, std::string> mimeMap = {
-		#define STR_PAIR(K,V) std::pair<std::string, std::string>(K,V)
-		#include "MimeTypes.inc"
+#define STR_PAIR(K,V) std::pair<std::string, std::string>(K,V)
+#include "MimeTypes.inc"
 	};
-    
+
 private:
 	// Returns a MIME type string given an extension
 	std::string lookupMimeType(std::string ext);
 
 	// Read a file from the FS and into a Resource object
 	Resource* readFile(std::string path, struct stat sb);
-	
+
 	// Reads a directory list or index from FS into a Resource object
 	Resource* readDirectory(std::string path, struct stat sb);
-	
+
 	// Provide a string rep of the directory listing based on URI
-    std::string generateDirList(std::string dirPath);
-    
+	std::string generateDirList(std::string dirPath);
+
 public:
-    ResourceHost(std::string base);
-    ~ResourceHost();
+	ResourceHost(std::string base);
+	~ResourceHost();
 
 	// Write a resource to the file system
 	void putResource(Resource* res, bool writeToDisk);
-    
-    // Returns a Resource based on URI
-    Resource* getResource(std::string uri);
+
+	// Returns a Resource based on URI
+	Resource* getResource(std::string uri);
 };
 
 #endif

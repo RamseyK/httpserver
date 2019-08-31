@@ -19,12 +19,12 @@
 #include "Client.h"
 
 Client::Client(int fd, sockaddr_in addr) {
-    socketDesc = fd;
-    clientAddr = addr;
+	socketDesc = fd;
+	clientAddr = addr;
 }
 
 Client::~Client() {
-    clearSendQueue();
+	clearSendQueue();
 }
 
 /**
@@ -52,7 +52,7 @@ unsigned int Client::sendQueueSize() {
  * @return SendQueueItem object containing the data to send and current offset
  */
 SendQueueItem* Client::nextInSendQueue() {
-	if(sendQueue.empty())
+	if (sendQueue.empty())
 		return NULL;
 
 	return sendQueue.front();
@@ -64,7 +64,7 @@ SendQueueItem* Client::nextInSendQueue() {
  */
 void Client::dequeueFromSendQueue() {
 	SendQueueItem* item = nextInSendQueue();
-	if(item != NULL) {
+	if (item != NULL) {
 		sendQueue.pop();
 		delete item;
 	}
@@ -75,7 +75,7 @@ void Client::dequeueFromSendQueue() {
  * Clears out the send queue for the client, deleting all internal SendQueueItem objects
  */
 void Client::clearSendQueue() {
-	while(!sendQueue.empty()) {
+	while (!sendQueue.empty()) {
 		delete sendQueue.front();
 		sendQueue.pop();
 	}

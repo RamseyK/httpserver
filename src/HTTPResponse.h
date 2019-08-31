@@ -2,13 +2,13 @@
  ByteBuffer
  HTTPResponse.h
  Copyright 2011-2014 Ramsey Kant
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,35 +22,35 @@
 #include "HTTPMessage.h"
 
 class HTTPResponse : public HTTPMessage {
-private:    
+private:
     // Response variables
     int status;
     std::string reason;
 
-	void determineReasonStr();
-	void determineStatusCode();
+    void determineReasonStr();
+    void determineStatusCode();
 
 protected:
-	virtual void init();
-    
+    virtual void init();
+
 public:
     HTTPResponse();
     HTTPResponse(std::string sData);
     HTTPResponse(byte *pData, unsigned int len);
     virtual ~HTTPResponse();
-    
+
     virtual byte* create();
     virtual bool parse();
-    
+
     // Accessors & Mutators
-    
+
     void setStatus (int scode) {
         status = scode;
-		determineReasonStr();
+        determineReasonStr();
     }
-    
+
     std::string getReason() {
-    	return reason;
+        return reason;
     }
 };
 

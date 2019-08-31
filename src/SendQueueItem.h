@@ -45,7 +45,7 @@ public:
 	}
 
 	~SendQueueItem() {
-		if(sendData != NULL) {
+		if (sendData != NULL) {
 			delete [] sendData;
 			sendData = NULL;
 		}

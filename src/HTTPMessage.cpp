@@ -248,7 +248,7 @@ void HTTPMessage::addHeader(std::string line) {
 	int i = 0;
 	kpos = line.find(':');
 	if(kpos == std::string::npos) {
-		printf("Could not addHeader: %s\n", line.c_str());
+		std::cout << "Could not addHeader: " << line.c_str() << std::endl;
 		return;
 	}
 	key = line.substr(0, kpos);

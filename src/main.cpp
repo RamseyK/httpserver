@@ -29,7 +29,7 @@ static HTTPServer* svr;
 
 // Ignore signals with this function
 void handleSigPipe(int snum) {
-    return;
+	return;
 }
 
 // Termination signal handler (Ctrl-C)
@@ -56,7 +56,7 @@ int main (int argc, const char * argv[])
 
 		epos = line.find("=");
 		key = line.substr(0, epos);
-		val = line.substr(epos+1, line.length());
+		val = line.substr(epos + 1, line.length());
 		config.insert(std::pair<std::string, std::string> (key, val));
 	}
 	cfile.close();
@@ -80,18 +80,18 @@ int main (int argc, const char * argv[])
 		pos = vhost_alias_str.find(delimiter);
 		token = vhost_alias_str.substr(0, pos);
 		vhosts.push_back(token);
-		vhost_alias_str.erase(0, pos+delimiter.length());
+		vhost_alias_str.erase(0, pos + delimiter.length());
 	} while (pos != std::string::npos);
 
-    // Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
-    signal(SIGPIPE, handleSigPipe);
+	// Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
+	signal(SIGPIPE, handleSigPipe);
 
 	// Register termination signals
 	signal(SIGABRT, &handleTermSig);
 	signal(SIGINT, &handleTermSig);
 	signal(SIGTERM, &handleTermSig);
 
-    // Instance and start the server
+	// Instance and start the server
 	svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"]);
 	if (!svr->start()) {
 		svr->stop();
@@ -101,10 +101,10 @@ int main (int argc, const char * argv[])
 
 	// Run main event loop
 	svr->process();
-	
+
 	// Stop the server
 	svr->stop();
 	delete svr;
-    
-    return 0;
+
+	return 0;
 }

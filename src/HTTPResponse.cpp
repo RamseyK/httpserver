@@ -2,13 +2,13 @@
  ByteBuffer
  HTTPResponse.cpp
  Copyright 2011-2014 Ramsey Kant
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,47 +45,47 @@ void HTTPResponse::init() {
  * responses with different kinds of strings
 */
 void HTTPResponse::determineStatusCode() {
-	if(reason.find("Continue") != std::string::npos) {
-		status = Status(CONTINUE);
-	} else if(reason.find("OK") != std::string::npos) {
-		status = Status(OK);
-	} else if(reason.find("Bad Request") != std::string::npos) {
-		status = Status(BAD_REQUEST);
-	} else if(reason.find("Not Found") != std::string::npos) {
-		status = Status(NOT_FOUND);
-	} else if(reason.find("Server Error") != std::string::npos) {
-		status = Status(SERVER_ERROR);
-	} else if(reason.find("Not Implemented") != std::string::npos) {
-		status = Status(NOT_IMPLEMENTED);
-	} else {
-	}
+    if (reason.find("Continue") != std::string::npos) {
+        status = Status(CONTINUE);
+    } else if (reason.find("OK") != std::string::npos) {
+        status = Status(OK);
+    } else if (reason.find("Bad Request") != std::string::npos) {
+        status = Status(BAD_REQUEST);
+    } else if (reason.find("Not Found") != std::string::npos) {
+        status = Status(NOT_FOUND);
+    } else if (reason.find("Server Error") != std::string::npos) {
+        status = Status(SERVER_ERROR);
+    } else if (reason.find("Not Implemented") != std::string::npos) {
+        status = Status(NOT_IMPLEMENTED);
+    } else {
+    }
 }
 
 /**
  * Determine the reason string based on the Response's status code
 */
 void HTTPResponse::determineReasonStr() {
-    switch(status) {
-        case Status(CONTINUE):
-            reason = "Continue";
-            break;
-        case Status(OK):
-            reason = "OK";
-            break;
-        case Status(BAD_REQUEST):
-        	reason = "Bad Request";
-        	break;
-        case Status(NOT_FOUND):
-            reason = "Not Found";
-            break;
-        case Status(SERVER_ERROR):
-            reason = "Internal Server Error";
-            break;
-        case Status(NOT_IMPLEMENTED):
-            reason = "Not Implemented";
-            break;
-        default:
-            break;
+    switch (status) {
+    case Status(CONTINUE):
+        reason = "Continue";
+        break;
+    case Status(OK):
+        reason = "OK";
+        break;
+    case Status(BAD_REQUEST):
+        reason = "Bad Request";
+        break;
+    case Status(NOT_FOUND):
+        reason = "Not Found";
+        break;
+    case Status(SERVER_ERROR):
+        reason = "Internal Server Error";
+        break;
+    case Status(NOT_IMPLEMENTED):
+        reason = "Not Implemented";
+        break;
+    default:
+        break;
     }
 }
 
@@ -98,26 +98,26 @@ void HTTPResponse::determineReasonStr() {
  */
 byte* HTTPResponse::create() {
     // Clear the bytebuffer in the event this isn't the first call of create()
-	clear();
-	
+    clear();
+
     // Insert the status line: <version> <status code> <reason>\r\n
     std::stringstream sline;
-	sline << version << " " << status << " " << reason;
+    sline << version << " " << status << " " << reason;
     putLine(sline.str());
-    
+
     // Put all headers
     putHeaders();
-    
+
     // If theres body data, add it now
-    if((data != NULL) && dataLen > 0) {
+    if ((data != NULL) && dataLen > 0) {
         putBytes(data, dataLen);
     }
-    
+
     // Allocate space for the returned byte array and return it
-	byte* createRetData = new byte[size()];
-	setReadPos(0);
-	getBytes(createRetData, size());
-    
+    byte* createRetData = new byte[size()];
+    setReadPos(0);
+    getBytes(createRetData, size());
+
     return createRetData;
 }
 
@@ -128,22 +128,22 @@ byte* HTTPResponse::create() {
  * @param True if successful. If false, sets parseErrorStr for reason of failure
  */
 bool HTTPResponse::parse() {
-	std::string statusstr;
-	
-	// Get elements from the status line: <version> <status code> <reason>\r\n
-	version = getStrElement();
-	statusstr = getStrElement();
-	determineStatusCode();
-	reason = getLine(); // Pull till \r\n termination
-	
-	// Parse and populate the headers map using the parseHeaders helper
-	parseHeaders();
-	
-	// If the body of the message
-	if(!parseBody())
-		return false;
-	
-	return true;
+    std::string statusstr;
+
+    // Get elements from the status line: <version> <status code> <reason>\r\n
+    version = getStrElement();
+    statusstr = getStrElement();
+    determineStatusCode();
+    reason = getLine(); // Pull till \r\n termination
+
+    // Parse and populate the headers map using the parseHeaders helper
+    parseHeaders();
+
+    // If the body of the message
+    if (!parseBody())
+        return false;
+
+    return true;
 }
 
 
