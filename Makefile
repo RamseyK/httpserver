@@ -14,9 +14,8 @@ DEBUGFLAGS := -g3 -O0 -Wall -fmudflap
 # Production Flags
 PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
 
-# No longer supported
 # ifeq ($(UNAME), Linux)
-# # Linux Flags
+# # Linux Flags - only supported if libkqueue is compiled from Github sources
 # CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
 # LINK := -lpthread -lkqueue $(PRODFLAGS)
 # else

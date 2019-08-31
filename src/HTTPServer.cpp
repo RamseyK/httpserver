@@ -47,7 +47,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
 
 	// Setup the resource host serving htdocs to provide for the vhost aliases
 	for (std::string vh : vhost_aliases) {
-		if ((vh.length() - 6) >= 128) {
+		if (vh.length() >= 122) {
 			std::cout << "vhost " << vh << " too long, skipping!" << std::endl;
 			continue;
 		}
