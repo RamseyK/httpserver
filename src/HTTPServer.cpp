@@ -451,6 +451,12 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 	// Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
 	if (req->getVersion().compare(HTTP_VERSION_11) == 0) {
 		host = req->getHeaderValue("Host");
+
+		// All vhosts have the port appended, so need to append it to the host if it doesnt exist
+		if (host.find(":") == std::string::npos) {
+			host.append(":" + std::to_string(listenPort));
+		}
+
 		std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
 
 		if (it != vhosts.end())
@@ -464,12 +470,8 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 
 	// ResourceHost couldnt be determined or the Host specified by the client was invalid
 	if (resHost == NULL) {
-		std::cout << "[" << cl->getClientIP() << "] " << "Warning - Unknown vhost specified: " << host << std::endl;
-
-		// TODO: Handle this properly
-		resHost = hostList[0];
-		// sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
-		// return;
+		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
+		return;
 	}
 
 	// Send the request to the correct handler function
