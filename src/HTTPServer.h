@@ -51,6 +51,8 @@ class HTTPServer {
 	int listenPort;
 	int listenSocket; // Descriptor for the listening socket
 	struct sockaddr_in serverAddr; // Structure for the server address
+	int dropUid; // setuid to this after bind()
+	int dropGid; // setgid to this after bind()
 
 	// Kqueue
 	struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
@@ -86,7 +88,7 @@ public:
 	bool canRun;
 
 public:
-	HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath);
+	HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid=0, int drop_gid=0);
 	~HTTPServer();
 
 	bool start();

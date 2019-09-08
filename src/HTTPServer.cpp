@@ -25,14 +25,19 @@
  * @param vhost_aliases List of hostnames the HTTP server will respond to
  * @param port Port the vhost listens on
  * @param diskpath Path to the folder the vhost serves up
+ * @param drop_uid UID to setuid to after bind().  Ignored if 0
+ * @param drop_gid GID to setgid to after bind().  Ignored if 0
  */
-HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath) {
+HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid, int drop_gid) {
 	canRun = false;
 	listenSocket = INVALID_SOCKET;
 	listenPort = port;
 	kqfd = -1;
+	dropUid = drop_uid;
+	dropGid = drop_gid;
 
-	std::cout << "Primary port: " << port << ", disk path: " << diskpath.c_str() << std::endl;
+	std::cout << "Port: " << port << std::endl;
+	std::cout << "Disk path: " << diskpath.c_str() << std::endl;
 
 	// Create a resource host serving the base path ./htdocs on disk
 	ResourceHost* resHost = new ResourceHost(diskpath);
@@ -102,6 +107,21 @@ bool HTTPServer::start() {
 	if (bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
 		std::cout << "Failed to bind to the address!" << std::endl;
 		return false;
+	}
+
+	// Optionally drop uid/gid if specified
+	if (dropUid != 0 && dropGid != 0) {
+		if (setgid(dropGid) == -1) {
+			std::cout << "setgid to " << dropGid << " failed!" << std::endl;
+			return false;
+		}
+		
+		if (setuid(dropUid) == -1) {
+			std::cout << "setuid to " << dropUid << " failed!" << std::endl;
+			return false;
+		}
+
+		std::cout << "Successfully dropped uid to " << dropUid << " and gid to " << dropGid << std::endl;
 	}
 
 	// Listen: Put the socket in a listening state, ready to accept connections

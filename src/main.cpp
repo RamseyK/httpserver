@@ -43,7 +43,8 @@ int main (int argc, const char * argv[])
 	std::map<std::string, std::string> config;
 	std::fstream cfile;
 	std::string line, key, val;
-	int epos;
+	int epos = 0;
+	int drop_uid = 0, drop_gid = 0;
 	cfile.open("server.config");
 	if (!cfile.is_open()) {
 		std::cout << "Unable to open server.config file in working directory" << std::endl;
@@ -83,6 +84,17 @@ int main (int argc, const char * argv[])
 		vhost_alias_str.erase(0, pos + delimiter.length());
 	} while (pos != std::string::npos);
 
+	// Check for optional drop_uid, drop_gid.  Ensure both are set
+	if (config.find("drop_uid") != config.end() && config.find("drop_gid") != config.end()) {
+		drop_uid = atoi(config["drop_uid"].c_str());
+		drop_gid = atoi(config["drop_gid"].c_str());
+
+		if (drop_uid == 0 || drop_gid == 0) {
+			// Both must be set, otherwise set back to 0 so we dont use
+			drop_uid = drop_gid = 0;
+		}
+	}
+
 	// Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
 	signal(SIGPIPE, handleSigPipe);
 
@@ -92,7 +104,7 @@ int main (int argc, const char * argv[])
 	signal(SIGTERM, &handleTermSig);
 
 	// Instance and start the server
-	svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"]);
+	svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"], drop_uid, drop_gid);
 	if (!svr->start()) {
 		svr->stop();
 		delete svr;
