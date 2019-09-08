@@ -440,7 +440,7 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 	std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " " << req->getRequestUri() << std::endl;
 	/*std::cout << "Headers:" << std::endl;
 	for(int i = 0; i < req->getNumHeaders(); i++) {
-		std::cout << req->getHeaderStr(i) << std::endl;
+		std::cout << "\t" << req->getHeaderStr(i) << std::endl;
 	}
 	std::cout << std::endl;*/
 
