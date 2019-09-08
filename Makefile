@@ -9,7 +9,7 @@ TARGET := httpserver
 UNAME := $(shell uname)
 
 # Debug Flags
-DEBUGFLAGS := -g3 -O0 -Wall -fmudflap
+DEBUGFLAGS := -g3 -O0 -Wall -fstack-check -fstack-protector-all
 
 # Production Flags
 PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
