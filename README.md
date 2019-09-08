@@ -11,8 +11,25 @@ A high performance, single threaded, HTTP server written in C++ to serve as a kq
 * Easy to understand HTTP protocol parser (from my ByteBuffer project)
 * Tested on FreeBSD and MacOS
 
-## Compiling Notes
+## Compiling
+* Only BSD based systems are supported.  Linux _may_ work when libkqueue is compiled from Github sources and linked, but this is unsupported.
 * On FreeBSD, compile with gmake
+
+## Usage
+
+```
+
+$ cat server.config 
+vhost=10.0.10.86,acme.local
+port=8080
+diskpath=./htdocs
+
+$ ./httpserver 
+Primary port: 8080, disk path: ./htdocs
+vhost: 10.0.10.86
+vhost: acme.local
+Server ready. Listening on port 8080...
+```
 
 ## License
 See LICENSE.TXT

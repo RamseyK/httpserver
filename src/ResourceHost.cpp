@@ -183,7 +183,7 @@ Resource* ResourceHost::getResource(std::string uri) {
 	if (uri.length() > 255 || uri.empty())
 		return NULL;
 
-	if (uri.find("../") != std::string::npos)
+	if (uri.find("../") != std::string::npos || uri.find("/..") != std::string::npos)
 		return NULL;
 
 	std::string path = baseDiskPath + uri;

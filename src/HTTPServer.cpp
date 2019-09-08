@@ -332,7 +332,6 @@ void HTTPServer::readClient(Client *cl, int data_len) {
 	char* pData = new char[data_len];
 
 	// Receive data on the wire into pData
-	/* TODO: Figure out what flags need to be set */
 	int flags = 0;
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
 
