@@ -110,13 +110,13 @@ bool HTTPServer::start() {
 	}
 
 	// Optionally drop uid/gid if specified
-	if (dropUid != 0 && dropGid != 0) {
-		if (setgid(dropGid) == -1) {
+	if (dropUid > 0 && dropGid > 0) {
+		if (setgid(dropGid) != 0) {
 			std::cout << "setgid to " << dropGid << " failed!" << std::endl;
 			return false;
 		}
 		
-		if (setuid(dropUid) == -1) {
+		if (setuid(dropUid) != 0) {
 			std::cout << "setuid to " << dropUid << " failed!" << std::endl;
 			return false;
 		}

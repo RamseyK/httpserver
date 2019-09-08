@@ -89,7 +89,7 @@ int main (int argc, const char * argv[])
 		drop_uid = atoi(config["drop_uid"].c_str());
 		drop_gid = atoi(config["drop_gid"].c_str());
 
-		if (drop_uid == 0 || drop_gid == 0) {
+		if (drop_uid <= 0 || drop_gid <= 0) {
 			// Both must be set, otherwise set back to 0 so we dont use
 			drop_uid = drop_gid = 0;
 		}
@@ -103,7 +103,7 @@ int main (int argc, const char * argv[])
 	signal(SIGINT, &handleTermSig);
 	signal(SIGTERM, &handleTermSig);
 
-	// Instance and start the server
+	// Instantiate and start the server
 	svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"], drop_uid, drop_gid);
 	if (!svr->start()) {
 		svr->stop();
