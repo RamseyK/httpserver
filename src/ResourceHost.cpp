@@ -32,12 +32,12 @@ ResourceHost::~ResourceHost() {
  * Looks up a MIME type in the dictionary
  *
  * @param ext File extension to use for the lookup
- * @return MIME type as a String. If type could not be found, returns the default 'text/html'
+ * @return MIME type as a String. If type could not be found, returns an empty string
  */
 std::string ResourceHost::lookupMimeType(std::string ext) {
 	std::unordered_map<std::string, std::string>::const_iterator it = mimeMap.find(ext);
 	if (it == mimeMap.end())
-		return "text/html";
+		return "";
 
 	return it->second;
 }
@@ -80,7 +80,12 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 
 	// Create a new Resource object and setup it's contents
 	Resource* res = new Resource(path);
-	res->setMimeType(lookupMimeType(res->getExtension()));
+	std::string mimetype = lookupMimeType(res->getExtension());
+	if (mimetype.length() != 0)
+		res->setMimeType(mimetype);
+	else
+		res->setMimeType("application/octet-stream");  // default to binary
+
 	res->setData(fdata, len);
 
 	return res;
