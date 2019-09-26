@@ -125,6 +125,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
 
 	unsigned int slen = listing.length();
 	char* sdata = new char[slen];
+	bzero(sdata, slen);
 	strncpy(sdata, listing.c_str(), slen);
 
 	res = new Resource(path, true);

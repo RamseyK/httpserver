@@ -294,12 +294,26 @@ void HTTPMessage::addHeader(std::string key, int value) {
  * @param key Key to identify the header
  */
 std::string HTTPMessage::getHeaderValue(std::string key) {
+
+	char c;
+	std::string key_lower = "";
+
 	// Lookup in map
 	auto it = headers->find(key);
 
-	// Key wasn't found, return a blank value
-	if (it == headers->end())
-		return "";
+	// Key wasn't found, try an all lowercase variant as some clients won't always use proper capitalization
+	if (it == headers->end()) {
+
+		for (int i = 0; i < key.length(); i++) {
+			c = key.at(i);
+			key_lower += tolower(c);
+		}
+
+		// Still not found, return empty string to indicate the Header value doesnt exist
+		it = headers->find(key_lower);
+		if (it == headers->end())
+			return "";
+	}
 
 	// Otherwise, return the value
 	return it->second;

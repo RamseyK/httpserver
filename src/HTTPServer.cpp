@@ -350,6 +350,7 @@ void HTTPServer::readClient(Client *cl, int data_len) {
 
 	HTTPRequest* req;
 	char* pData = new char[data_len];
+	bzero(pData, data_len);
 
 	// Receive data on the wire into pData
 	int flags = 0;
@@ -622,6 +623,7 @@ void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
 	std::string body = resp->getReason() + ": " + msg;
 	unsigned int slen = body.length();
 	char* sdata = new char[slen];
+	bzero(sdata, slen);
 	strncpy(sdata, body.c_str(), slen);
 
 	resp->addHeader("Content-Type", "text/plain");
