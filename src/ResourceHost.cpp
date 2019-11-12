@@ -73,6 +73,7 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 
 	// Allocate memory for contents of file and read in the contents
 	byte* fdata = new byte[len];
+	bzero(fdata, len);
 	file.read((char*)fdata, len);
 
 	// Close the file

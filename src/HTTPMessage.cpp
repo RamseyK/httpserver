@@ -255,7 +255,7 @@ void HTTPMessage::addHeader(std::string line) {
 	value = line.substr(kpos + 1, line.size() - kpos - 1);
 
 	// Skip all leading spaces in the value
-	while (value.at(i) == 0x20) {
+	while (i < value.size() && value.at(i) == 0x20) {
 		i++;
 	}
 	value = value.substr(i, value.size());
