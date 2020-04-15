@@ -144,10 +144,10 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
  */
 std::string ResourceHost::generateDirList(std::string path) {
 	// Get just the relative uri from the entire path by stripping out the baseDiskPath from the beginning
-	size_t uri_pos = path.find_last_of(baseDiskPath);
+	size_t uri_pos = path.find(baseDiskPath);
 	std::string uri = "?";
 	if (uri_pos != std::string::npos)
-		uri = path.substr(uri_pos);
+		uri = path.substr(baseDiskPath.length());
 
 	std::stringstream ret;
 	ret << "<html><head><title>" << uri << "</title></head><body>";
