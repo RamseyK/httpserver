@@ -147,7 +147,7 @@ std::string ResourceHost::generateDirList(std::string path) {
 	size_t uri_pos = path.find(baseDiskPath);
 	std::string uri = "?";
 	if (uri_pos != std::string::npos)
-		uri = path.substr(baseDiskPath.length());
+		uri = path.substr(uri_pos + baseDiskPath.length());
 
 	std::stringstream ret;
 	ret << "<html><head><title>" << uri << "</title></head><body>";
