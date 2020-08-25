@@ -452,7 +452,7 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 	// If there's an error, report it and send a server error in response
 	if (!req->parse()) {
 		std::cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << std::endl;
-		std::cout << req->getParseError() << std::endl;
+		// std::cout << req->getParseError() << std::endl;
 		sendStatusResponse(cl, Status(BAD_REQUEST), req->getParseError());
 		return;
 	}
