@@ -150,6 +150,7 @@ std::string HTTPMessage::getStrElement(char delim) {
 
 	// Grab the std::string from the byte buffer up to the delimiter
 	char *str = new char[size];
+	bzero(str, size);
 	getBytes((byte*)str, size);
 	str[size - 1] = 0x00; // NULL termination
 	ret.assign(str);

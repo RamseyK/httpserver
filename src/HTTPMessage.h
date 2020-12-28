@@ -28,7 +28,7 @@
 // Constants
 #define HTTP_VERSION_10 "HTTP/1.0"
 #define HTTP_VERSION_11 "HTTP/1.1"
-#define DEFAULT_HTTP_VERSION "HTTP/1.1"
+#define DEFAULT_HTTP_VERSION HTTP_VERSION_11
 #define NUM_METHODS 9
 
 // HTTP Methods (Requests)

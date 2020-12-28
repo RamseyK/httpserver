@@ -44,7 +44,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
 	hostList.push_back(resHost);
 
 	// Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
-	char tmpstr[128];
+	char tmpstr[128] = {0};
 	sprintf(tmpstr, "localhost:%i", listenPort);
 	vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 	sprintf(tmpstr, "127.0.0.1:%i", listenPort);
@@ -591,6 +591,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
 	// Get a byte array representation of the request
 	unsigned int len = req->size();
 	byte* buf = new byte[len];
+	bzero(buf, len);
 	req->setReadPos(0); // Set the read position at the beginning since the request has already been read to the end
 	req->getBytes(buf, len);
 
@@ -649,7 +650,7 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
 
 	// Time stamp the response with the Date header
 	std::string tstr;
-	char tbuf[36];
+	char tbuf[36] = {0};
 	time_t rawtime;
 	struct tm* ptm;
 	time(&rawtime);
