@@ -69,6 +69,15 @@ public:
 		return size;
 	}
 
+	// Get the file name
+	std::string getName() {
+		std::string name = "";
+		size_t slash_pos = location.find_last_of("/");
+		if (slash_pos != std::string::npos)
+			name = location.substr(slash_pos + 1);
+		return name;
+	}
+
 	// Get the file extension
 	std::string getExtension() {
 		std::string ext = "";

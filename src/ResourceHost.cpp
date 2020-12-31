@@ -66,9 +66,6 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 		return NULL;
 
 	// Get the length of the file
-	/*file.seekg(0, std::ios::end);
-	len = file.tellg();
-	file.seekg(0, std::ios::beg);*/
 	len = sb.st_size;
 
 	// Allocate memory for contents of file and read in the contents
@@ -81,6 +78,15 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 
 	// Create a new Resource object and setup it's contents
 	Resource* res = new Resource(path);
+	std::string name = res->getName();
+	if (name.length() == 0)
+		return NULL;  // Malformed name
+
+	// Always disallow hidden files
+	if (name.c_str()[0] == '.') {
+		return NULL;
+	}
+
 	std::string mimetype = lookupMimeType(res->getExtension());
 	if (mimetype.length() != 0)
 		res->setMimeType(mimetype);

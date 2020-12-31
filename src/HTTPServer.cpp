@@ -621,7 +621,10 @@ void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
 	resp->setStatus(Status(status));
 
 	// Body message: Reason string + additional msg
-	std::string body = resp->getReason() + ": " + msg;
+	std::string body = resp->getReason();
+	if (msg.length() > 0)
+		body +=  ": " + msg;
+
 	unsigned int slen = body.length();
 	char* sdata = new char[slen];
 	bzero(sdata, slen);
