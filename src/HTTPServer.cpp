@@ -215,12 +215,19 @@ void HTTPServer::process() {
 				cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
 				if (cl == NULL) {
 					std::cout << "Could not find client" << std::endl;
+					// Remove socket events from kqueue
+					updateEvent(evList[i].ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+					updateEvent(evList[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+
+					// Close the socket descriptor
+					close(evList[i].ident);
+
 					continue;
 				}
 
 				// Client wants to disconnect
 				if (evList[i].flags & EV_EOF) {
-					disconnectClient(cl);
+					disconnectClient(cl, true);
 					continue;
 				}
 
@@ -360,11 +367,11 @@ void HTTPServer::readClient(Client *cl, int data_len) {
 	if (lenRecv == 0) {
 		// Client closed the connection
 		std::cout << "[" << cl->getClientIP() << "] has opted to close the connection" << std::endl;
-		disconnectClient(cl);
+		disconnectClient(cl, true);
 	} else if (lenRecv < 0) {
 		// Something went wrong with the connection
 		// TODO: check perror() for the specific error message
-		disconnectClient(cl);
+		disconnectClient(cl, true);
 	} else {
 		// Data received: Place the data in an HTTPRequest and pass it to handleRequest for processing
 		req = new HTTPRequest((byte*)pData, lenRecv);
@@ -432,7 +439,7 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
 		cl->dequeueFromSendQueue();
 
 	if (disconnect) {
-		disconnectClient(cl);
+		disconnectClient(cl, true);
 		return false;
 	}
 
