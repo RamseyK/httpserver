@@ -1,7 +1,7 @@
 /**
 	httpserver
 	HTTPServer.cpp
-	Copyright 2011-2019 Ramsey Kant
+	Copyright 2011-2021 Ramsey Kant
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -197,7 +197,6 @@ void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflag
 void HTTPServer::process() {
 	int nev = 0; // Number of changed events returned by kevent
 	Client* cl = NULL;
-	struct kevent read_kev, write_kev;
 
 	while (canRun) {
 		// Get a list of changed socket descriptors with a read event triggered in evList
@@ -230,10 +229,6 @@ void HTTPServer::process() {
 					disconnectClient(cl, true);
 					continue;
 				}
-
-				// Clear kevent structures
-				memset(&read_kev, 0, sizeof(struct kevent));
-				memset(&write_kev, 0, sizeof(struct kevent));
 
 				if (evList[i].filter == EVFILT_READ) {
 					//std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
