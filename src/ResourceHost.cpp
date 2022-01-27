@@ -45,6 +45,7 @@ std::string ResourceHost::lookupMimeType(std::string ext) {
 /**
  * Read File
  * Read a file from disk and return the appropriate Resource object
+ * This creates a new Resource object - callers are expected to dispose of the return value if non-NULL
  *
  * @param path Full disk path of the file
  * @param sb Filled in stat struct
@@ -79,11 +80,14 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 	// Create a new Resource object and setup it's contents
 	Resource* res = new Resource(path);
 	std::string name = res->getName();
-	if (name.length() == 0)
+	if (name.length() == 0) {
+		delete res;
 		return NULL;  // Malformed name
+	}
 
 	// Always disallow hidden files
 	if (name.c_str()[0] == '.') {
+		delete res;
 		return NULL;
 	}
 
@@ -101,6 +105,7 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 /**
  * Read Directory
  * Read a directory (list or index) from disk into a Resource object
+ * This creates a new Resource object - callers are expected to dispose of the return value if non-NULL
  *
  * @param path Full disk path of the file
  * @param sb Filled in stat struct
@@ -188,6 +193,7 @@ std::string ResourceHost::generateDirList(std::string path) {
 
 /**
  * Retrieve a resource from the File system
+ * This returns a new Resource object - callers are expected to dispose of the return value if non-NULL
  *
  * @param uri The URI sent in the request
  * @return NULL if unable to load the resource. Resource object
@@ -196,6 +202,7 @@ Resource* ResourceHost::getResource(std::string uri) {
 	if (uri.length() > 255 || uri.empty())
 		return NULL;
 
+	// Do not allow directory traversal
 	if (uri.find("../") != std::string::npos || uri.find("/..") != std::string::npos)
 		return NULL;
 
