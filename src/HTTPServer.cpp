@@ -466,41 +466,11 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
 	}
 	std::cout << std::endl;*/
 
-	// Determine the appropriate vhost
-	ResourceHost* resHost = NULL;
-	std::string host = "";
-
-	// Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
-	if (req->getVersion().compare(HTTP_VERSION_11) == 0) {
-		host = req->getHeaderValue("Host");
-
-		// All vhosts have the port appended, so need to append it to the host if it doesnt exist
-		if (host.find(":") == std::string::npos) {
-			host.append(":" + std::to_string(listenPort));
-		}
-
-		std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
-
-		if (it != vhosts.end())
-			resHost = it->second;
-	} else {
-		// Temporary: HTTP/1.0 are given the first ResouceHost in the hostList
-		// TODO: Allow admin to specify a 'default resource host'
-		if (hostList.size() > 0)
-			resHost = hostList[0];
-	}
-
-	// ResourceHost couldnt be determined or the Host specified by the client was invalid
-	if (resHost == NULL) {
-		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified: " + host);
-		return;
-	}
-
 	// Send the request to the correct handler function
 	switch (req->getMethod()) {
 	case Method(HEAD):
 	case Method(GET):
-		handleGet(cl, req, resHost);
+		handleGet(cl, req);
 		break;
 	case Method(OPTIONS):
 		handleOptions(cl, req);
@@ -521,12 +491,21 @@ void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
  *
  * @param cl Client requesting the resource
  * @param req State of the request
- * @param resHost Resource host to service the request
  */
-void HTTPServer::handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost) {
+void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
+	std::string uri;
+	Resource* r = NULL;
+	ResourceHost* resHost = this->getResourceHostForRequest(req);
+
+	// ResourceHost couldnt be determined or the Host specified by the client was invalid
+	if (resHost == NULL) {
+		sendStatusResponse(cl, Status(BAD_REQUEST), "Invalid/No Host specified");
+		return;
+	}
+
 	// Check if the requested resource exists
-	std::string uri = req->getRequestUri();
-	Resource* r = resHost->getResource(uri);
+	uri = req->getRequestUri();
+	r = resHost->getResource(uri);
 
 	if (r != NULL) { // Exists
 		std::cout << "[" << cl->getClientIP() << "] " << "Sending file: " << uri << std::endl;
@@ -676,4 +655,36 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
 	cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
 }
 
+/**
+ * Get Resource Host
+ * Retrieve the appropriate ResourceHost instance based on the requested path
+ * 
+ * @param req State of the request
+ */
+ResourceHost* HTTPServer::getResourceHostForRequest(HTTPRequest* req) {
+	// Determine the appropriate vhost
+	ResourceHost* resHost = NULL;
+	std::string host = "";
 
+	// Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
+	if (req->getVersion().compare(HTTP_VERSION_11) == 0) {
+		host = req->getHeaderValue("Host");
+
+		// All vhosts have the port appended, so need to append it to the host if it doesnt exist
+		if (host.find(":") == std::string::npos) {
+			host.append(":" + std::to_string(listenPort));
+		}
+
+		std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
+
+		if (it != vhosts.end())
+			resHost = it->second;
+	} else {
+		// Temporary: HTTP/1.0 are given the first ResouceHost in the hostList
+		// TODO: Allow admin to specify a 'default resource host'
+		if (hostList.size() > 0)
+			resHost = hostList[0];
+	}
+	
+	return resHost;
+}

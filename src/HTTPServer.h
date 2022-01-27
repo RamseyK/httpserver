@@ -73,10 +73,11 @@ class HTTPServer {
 	void disconnectClient(Client* cl, bool mapErase = true);
 	void readClient(Client* cl, int data_len); // Client read event
 	bool writeClient(Client* cl, int avail_bytes); // Client write event
+	ResourceHost* getResourceHostForRequest(HTTPRequest* req);
 
 	// Request handling
 	void handleRequest(Client* cl, HTTPRequest* req);
-	void handleGet(Client* cl, HTTPRequest* req, ResourceHost* resHost);
+	void handleGet(Client* cl, HTTPRequest* req);
 	void handleOptions(Client* cl, HTTPRequest* req);
 	void handleTrace(Client* cl, HTTPRequest* req);
 
