@@ -89,11 +89,15 @@ void ByteBuffer::clear() {
  * @return A pointer to the newly cloned ByteBuffer. NULL if no more memory available
  */
 ByteBuffer* ByteBuffer::clone() {
+	//save 
 	ByteBuffer* ret = new ByteBuffer(buf.size());
 
 	// Copy data
 	for(unsigned int i = 0; i < buf.size(); i++) {
-		ret->put(i, (byte)get(i));
+		// change the put call . there should not be put(i,(byte)get(i)). even change the place of these two parameters.
+		//because new ByteBuffer(buf.size()) return a ret have size of 0, can't call put((byte)get(i),i);
+		//ex: ByteBuffer* mybuf=new ByteBuffer(12);  mybuf->put('a',0);  can not initialize rightly.
+		ret->put((byte)get(i));
 	}
 
 	// Reset positions
