@@ -93,7 +93,7 @@ ByteBuffer* ByteBuffer::clone() {
 
 	// Copy data
 	for(unsigned int i = 0; i < buf.size(); i++) {
-		ret->put(i, (byte)get(i));
+		ret->put((byte)get(i));
 	}
 
 	// Reset positions
