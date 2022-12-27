@@ -69,8 +69,9 @@ private:
 	}
 	
 	template <typename T> void insert(T data, unsigned int index) {
-		if((index + sizeof(data)) > size())
-			return;
+		if ((index + sizeof(data)) > size()) {
+			buf.resize(size() + (index + sizeof(data)));
+		}
 
 		memcpy(&buf[index], (byte*)&data, sizeof(data));
 		wpos = index+sizeof(data);
