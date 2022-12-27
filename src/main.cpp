@@ -51,8 +51,8 @@ int main (int argc, const char * argv[])
 		return -1;
 	}
 	while (getline(cfile, line)) {
-		// Skip lines beginning with a #. and empty line.
-		if (line.rfind("#", 0) == 0 || line.length() == 0)
+		// Skip empty lines or those beginning with a #
+		if (line.length() == 0 || line.rfind("#", 0) == 0)
 			continue;
 
 		epos = line.find("=");
