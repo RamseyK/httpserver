@@ -54,7 +54,7 @@ std::string ResourceHost::lookupMimeType(std::string ext) {
 Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 	// Make sure the webserver USER owns the file
 	if (!(sb.st_mode & S_IRWXU))
-		return NULL;
+		return nullptr;
 
 	std::ifstream file;
 	unsigned int len = 0;
@@ -64,7 +64,7 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 
 	// Return null if the file failed to open
 	if (!file.is_open())
-		return NULL;
+		return nullptr;
 
 	// Get the length of the file
 	len = sb.st_size;
@@ -82,13 +82,13 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 	std::string name = res->getName();
 	if (name.length() == 0) {
 		delete res;
-		return NULL;  // Malformed name
+		return nullptr;  // Malformed name
 	}
 
 	// Always disallow hidden files
 	if (name.c_str()[0] == '.') {
 		delete res;
-		return NULL;
+		return nullptr;
 	}
 
 	std::string mimetype = lookupMimeType(res->getExtension());
@@ -112,7 +112,7 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
  * @return Return's the resource object upon successful load
  */
 Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
-	Resource* res = NULL;
+	Resource* res = nullptr;
 	// Make the path end with a / (for consistency) if it doesnt already
 	if (path.empty() || path[path.length() - 1] != '/')
 		path += "/";
@@ -130,7 +130,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
 
 	// Make sure the webserver USER owns the directory
 	if (!(sb.st_mode & S_IRWXU))
-		return NULL;
+		return nullptr;
 
 	// Generate an HTML directory listing
 	std::string listing = generateDirList(path);
@@ -167,14 +167,14 @@ std::string ResourceHost::generateDirList(std::string path) {
 	struct dirent *ent;
 
 	dir = opendir(path.c_str());
-	if (dir == NULL)
+	if (dir == nullptr)
 		return "";
 
 	// Page title, displaying the URI of the directory being listed
 	ret << "<h1>Index of " << uri << "</h1><hr /><br />";
 
 	// Add all files and directories to the return
-	while ((ent = readdir(dir)) != NULL) {
+	while ((ent = readdir(dir)) != nullptr) {
 		// Skip any 'hidden' files (starting with a '.')
 		if (ent->d_name[0] == '.')
 			continue;
@@ -200,19 +200,19 @@ std::string ResourceHost::generateDirList(std::string path) {
  */
 Resource* ResourceHost::getResource(std::string uri) {
 	if (uri.length() > 255 || uri.empty())
-		return NULL;
+		return nullptr;
 
 	// Do not allow directory traversal
 	if (uri.find("../") != std::string::npos || uri.find("/..") != std::string::npos)
-		return NULL;
+		return nullptr;
 
 	std::string path = baseDiskPath + uri;
-	Resource* res = NULL;
+	Resource* res = nullptr;
 
 	// Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
 	struct stat sb;
 	if (stat(path.c_str(), &sb) == -1)
-		return NULL; // File not found
+		return nullptr; // File not found
 
 	// Determine file type
 	if (sb.st_mode & S_IFDIR) { // Directory
@@ -222,7 +222,7 @@ Resource* ResourceHost::getResource(std::string uri) {
 		// Attempt to load the file into memory from the FS
 		res = readFile(path, sb);
 	} else { // Something else..device, socket, symlink
-		return NULL;
+		return nullptr;
 	}
 
 	return res;

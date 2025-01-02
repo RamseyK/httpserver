@@ -109,7 +109,7 @@ byte* HTTPResponse::create() {
     putHeaders();
 
     // If theres body data, add it now
-    if ((data != NULL) && dataLen > 0) {
+    if ((data != nullptr) && dataLen > 0) {
         putBytes(data, dataLen);
     }
 

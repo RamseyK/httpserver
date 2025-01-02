@@ -1,19 +1,19 @@
 /**
-	httpserver
-	HTTPServer.h
-	Copyright 2011-2021 Ramsey Kant
+    httpserver
+    HTTPServer.h
+    Copyright 2011-2021 Ramsey Kant
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-	    http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #ifndef _HTTPSERVER_H_
@@ -47,56 +47,56 @@
 #define QUEUE_SIZE 1024
 
 class HTTPServer {
-	// Server Socket
-	int listenPort;
-	int listenSocket; // Descriptor for the listening socket
-	struct sockaddr_in serverAddr; // Structure for the server address
-	int dropUid; // setuid to this after bind()
-	int dropGid; // setgid to this after bind()
+    // Server Socket
+    int listenPort;
+    int listenSocket; // Descriptor for the listening socket
+    struct sockaddr_in serverAddr; // Structure for the server address
+    int dropUid; // setuid to this after bind()
+    int dropGid; // setgid to this after bind()
 
-	// Kqueue
-	struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
-	int kqfd; // kqueue descriptor
-	struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
+    // Kqueue
+    struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
+    int kqfd; // kqueue descriptor
+    struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
 
-	// Client map, maps Socket descriptor to Client object
-	std::unordered_map<int, Client*> clientMap;
+    // Client map, maps Socket descriptor to Client object
+    std::unordered_map<int, Client*> clientMap;
 
-	// Resources / File System
-	std::vector<ResourceHost*> hostList; // Contains all ResourceHosts
-	std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
+    // Resources / File System
+    std::vector<ResourceHost*> hostList; // Contains all ResourceHosts
+    std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
 
-	// Connection processing
-	void updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void *udata);
-	void acceptConnection();
-	Client *getClient(int clfd);
-	void disconnectClient(Client* cl, bool mapErase = true);
-	void readClient(Client* cl, int data_len); // Client read event
-	bool writeClient(Client* cl, int avail_bytes); // Client write event
-	ResourceHost* getResourceHostForRequest(HTTPRequest* req);
+    // Connection processing
+    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void *udata);
+    void acceptConnection();
+    Client *getClient(int clfd);
+    void disconnectClient(Client* cl, bool mapErase = true);
+    void readClient(Client* cl, int data_len); // Client read event
+    bool writeClient(Client* cl, int avail_bytes); // Client write event
+    ResourceHost* getResourceHostForRequest(HTTPRequest* req);
 
-	// Request handling
-	void handleRequest(Client* cl, HTTPRequest* req);
-	void handleGet(Client* cl, HTTPRequest* req);
-	void handleOptions(Client* cl, HTTPRequest* req);
-	void handleTrace(Client* cl, HTTPRequest* req);
+    // Request handling
+    void handleRequest(Client* cl, HTTPRequest* req);
+    void handleGet(Client* cl, HTTPRequest* req);
+    void handleOptions(Client* cl, HTTPRequest* req);
+    void handleTrace(Client* cl, HTTPRequest* req);
 
-	// Response
-	void sendStatusResponse(Client* cl, int status, std::string msg = "");
-	void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
-
-public:
-	bool canRun;
+    // Response
+    void sendStatusResponse(Client* cl, int status, std::string msg = "");
+    void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
 
 public:
-	HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid=0, int drop_gid=0);
-	~HTTPServer();
+    bool canRun;
 
-	bool start();
-	void stop();
+public:
+    HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid=0, int drop_gid=0);
+    ~HTTPServer();
 
-	// Main event loop
-	void process();
+    bool start();
+    void stop();
+
+    // Main event loop
+    void process();
 };
 
 #endif

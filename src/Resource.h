@@ -1,19 +1,19 @@
 /**
-	httpserver
-	Resource.h
-	Copyright 2011-2021 Ramsey Kant
+    httpserver
+    Resource.h
+    Copyright 2011-2021 Ramsey Kant
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-	    http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #ifndef _RESOURCE_H_
@@ -26,66 +26,66 @@ typedef unsigned char byte;
 class Resource {
 
 private:
-	byte* data; // File data
-	unsigned int size;
-	std::string mimeType;
-	std::string location; // Disk path location within the server
-	bool directory;
+    byte* data; // File data
+    unsigned int size;
+    std::string mimeType;
+    std::string location; // Disk path location within the server
+    bool directory;
 
 public:
-	Resource(std::string loc, bool dir = false);
-	~Resource();
+    Resource(std::string loc, bool dir = false);
+    ~Resource();
 
-	// Setters
+    // Setters
 
-	void setData(byte* d, unsigned int s) {
-		data = d;
-		size = s;
-	}
+    void setData(byte* d, unsigned int s) {
+        data = d;
+        size = s;
+    }
 
-	void setMimeType(std::string mt) {
-		mimeType = mt;
-	}
+    void setMimeType(std::string mt) {
+        mimeType = mt;
+    }
 
-	// Getters
+    // Getters
 
-	std::string getMimeType() {
-		return mimeType;
-	}
+    std::string getMimeType() {
+        return mimeType;
+    }
 
-	std::string getLocation() {
-		return location;
-	}
+    std::string getLocation() {
+        return location;
+    }
 
-	bool isDirectory() {
-		return directory;
-	}
+    bool isDirectory() {
+        return directory;
+    }
 
-	byte* getData() {
-		return data;
-	}
+    byte* getData() {
+        return data;
+    }
 
-	unsigned int getSize() {
-		return size;
-	}
+    unsigned int getSize() {
+        return size;
+    }
 
-	// Get the file name
-	std::string getName() {
-		std::string name = "";
-		size_t slash_pos = location.find_last_of("/");
-		if (slash_pos != std::string::npos)
-			name = location.substr(slash_pos + 1);
-		return name;
-	}
+    // Get the file name
+    std::string getName() {
+        std::string name = "";
+        size_t slash_pos = location.find_last_of("/");
+        if (slash_pos != std::string::npos)
+            name = location.substr(slash_pos + 1);
+        return name;
+    }
 
-	// Get the file extension
-	std::string getExtension() {
-		std::string ext = "";
-		size_t ext_pos = location.find_last_of(".");
-		if (ext_pos != std::string::npos)
-			ext = location.substr(ext_pos + 1);
-		return ext;
-	}
+    // Get the file extension
+    std::string getExtension() {
+        std::string ext = "";
+        size_t ext_pos = location.find_last_of(".");
+        if (ext_pos != std::string::npos)
+            ext = location.substr(ext_pos + 1);
+        return ext;
+    }
 };
 
 #endif
