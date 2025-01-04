@@ -9,7 +9,7 @@ A high performance, single threaded, HTTP/1.1 server written in C++ to serve as 
 * Clean, documented code
 * Efficient socket management with kqueue
 * Easy to understand HTTP protocol parser (from my [ByteBuffer](https://github.com/RamseyK/ByteBufferCpp) project)
-* Tested on FreeBSD and MacOS
+* Tested on FreeBSD and macOS
 
 ## Compiling
 * Only BSD based systems are supported.  Linux _may_ work when [libkqueue is compiled from Github sources](https://github.com/mheily/libkqueue) and linked, but this is unsupported.

@@ -11,7 +11,7 @@ def main():
     if not os.path.isfile(args.source):
         print("Source mime.types file must exist")
         parser.print_help()
-        return -1
+        return 1
 
     mapping = {}
 
