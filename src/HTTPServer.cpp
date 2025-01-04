@@ -541,7 +541,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
+void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
     // For now, we'll always return the capabilities of the server instead of figuring it out for each resource
     std::string allow = "HEAD, GET, OPTIONS, TRACE";
 

@@ -1,3 +1,5 @@
 bin/httpserver
 build/
 *DS_Store*
+
+*.o

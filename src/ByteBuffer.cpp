@@ -36,7 +36,7 @@ ByteBuffer::ByteBuffer(unsigned int size) {
  * @param arr byte array of data (should be of length len)
  * @param size Size of space to allocate
  */
-ByteBuffer::ByteBuffer(byte* arr, unsigned int size) {
+ByteBuffer::ByteBuffer(const byte* arr, unsigned int size) {
     // If the provided array is NULL, allocate a blank buffer of the provided size
     if(arr == nullptr) {
         buf.reserve(size);
@@ -182,7 +182,7 @@ byte ByteBuffer::get(unsigned int index) const {
     return read<byte>(index);
 }
 
-void ByteBuffer::getBytes(byte* out_buf, unsigned int out_len) {
+void ByteBuffer::getBytes(byte* const out_buf, unsigned int out_len) {
     for(unsigned int i = 0; i < out_len; i++) {
         out_buf[i] = read<byte>();
     }
@@ -192,7 +192,7 @@ char ByteBuffer::getChar() {
     return read<char>();
 }
 
-char ByteBuffer::getChar(unsigned int index) {
+char ByteBuffer::getChar(unsigned int index) const {
     return read<char>(index);
 }
 
@@ -200,7 +200,7 @@ double ByteBuffer::getDouble() {
     return read<double>();
 }
 
-double ByteBuffer::getDouble(unsigned int index) {
+double ByteBuffer::getDouble(unsigned int index) const {
     return read<double>(index);
 }
 
@@ -208,7 +208,7 @@ float ByteBuffer::getFloat() {
     return read<float>();
 }
 
-float ByteBuffer::getFloat(unsigned int index) {
+float ByteBuffer::getFloat(unsigned int index) const {
     return read<float>(index);
 }
 
@@ -216,7 +216,7 @@ int ByteBuffer::getInt() {
     return read<int>();
 }
 
-int ByteBuffer::getInt(unsigned int index) {
+int ByteBuffer::getInt(unsigned int index) const {
     return read<int>(index);
 }
 
@@ -224,7 +224,7 @@ long ByteBuffer::getLong() {
     return read<long>();
 }
 
-long ByteBuffer::getLong(unsigned int index) {
+long ByteBuffer::getLong(unsigned int index) const {
     return read<long>(index);
 }
 
@@ -232,7 +232,7 @@ short ByteBuffer::getShort() {
     return read<short>();
 }
 
-short ByteBuffer::getShort(unsigned int index) {
+short ByteBuffer::getShort(unsigned int index) const {
     return read<short>(index);
 }
 

@@ -78,7 +78,7 @@ private:
 
 public:
     ByteBuffer(unsigned int size = DEFAULT_SIZE);
-    ByteBuffer(byte* arr, unsigned int size);
+    ByteBuffer(const byte* arr, unsigned int size);
     virtual ~ByteBuffer();
 
     unsigned int bytesRemaining() const; // Number of bytes from the current read position till the end of the buffer
@@ -116,19 +116,19 @@ public:
     byte peek(); // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
     byte get(); // Relative get method. Reads the byte at the buffers current position then increments the position
     byte get(unsigned int index) const; // Absolute get method. Read byte at index
-    void getBytes(byte* out_buf, unsigned int out_len); // Absolute read into array buf of length len
+    void getBytes(byte* const out_buf, unsigned int out_len); // Absolute read into array buf of length len
     char getChar(); // Relative
-    char getChar(unsigned int index); // Absolute
+    char getChar(unsigned int index) const; // Absolute
     double getDouble();
-    double getDouble(unsigned int index);
+    double getDouble(unsigned int index) const;
     float getFloat();
-    float getFloat(unsigned int index);
+    float getFloat(unsigned int index) const;
     int getInt();
-    int getInt(unsigned int index);
+    int getInt(unsigned int index) const;
     long getLong();
-    long getLong(unsigned int index);
+    long getLong(unsigned int index) const;
     short getShort();
-    short getShort(unsigned int index);
+    short getShort(unsigned int index) const;
 
     // Write
 

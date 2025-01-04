@@ -28,16 +28,16 @@
 static HTTPServer* svr;
 
 // Ignore signals with this function
-void handleSigPipe(int snum) {
+void handleSigPipe([[maybe_unused]] int snum) {
     return;
 }
 
 // Termination signal handler (Ctrl-C)
-void handleTermSig(int snum) {
+void handleTermSig([[maybe_unused]] int snum) {
     svr->canRun = false;
 }
 
-int main (int argc, const char * argv[])
+int main()
 {
     // Parse config file
     std::map<std::string, std::string> config;

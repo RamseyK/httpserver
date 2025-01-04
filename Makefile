@@ -1,42 +1,51 @@
 # Makefile for httpserver
 # (C) Ramsey Kant 2011-2025
 
-CC := clang++
-SRCDIR := src
-BINDIR := bin
-BUILDDIR := build
-TARGET := httpserver
-UNAME := $(shell uname)
+DEST = httpserver
+CLANG_FORMAT = clang-format
+LDFLAGS ?=
+CXXFLAGS ?=
+CXX = clang++
 
-# Debug Flags
-DEBUGFLAGS := -g3 -O0 -Wall -fstack-check -fstack-protector-all
+CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers \
+			-Wformat -Wformat=2 -Wimplicit-fallthrough \
+			-march=x86-64-v3 -fPIE -flto=auto \
+			-fexceptions \
+			-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer \
+			-fno-delete-null-pointer-checks -fno-strict-aliasing \
+			-pedantic -std=c++23
 
-# Production Flags
-PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
+LDFLAGS += -flto=auto
 
-# ifeq ($(UNAME), Linux)
-# # Linux Flags - only supported if libkqueue is compiled from Github sources
-# CFLAGS := -std=c++20 -Iinclude/ $(PRODFLAGS)
-# LINK := -lpthread -lkqueue $(PRODFLAGS)
-# else
-# OSX / BSD Flags
-CFLAGS := -std=c++23 -Iinclude/ $(PRODFLAGS)
-LINK := $(PRODFLAGS)
-# endif
- 
- 
-SRCEXT := cpp
-SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+ifeq ($(DEBUG), 1)
+CXXFLAGS += -Og -g -ggdb3 -DDEBUG=1 \
+			-fasynchronous-unwind-tables \
+			-D_GLIBCXX_ASSERTIONS \
+			-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG \
+			-fstack-protector-all
+else
+CXXFLAGS += -O3 -DNDEBUG
+endif
 
-$(TARGET): $(OBJECTS)
-	@echo " Linking..."; $(CC) $^ $(LINK) -o $(BINDIR)/$(TARGET)
+SOURCES = $(sort $(wildcard src/*.cpp))
+OBJECTS = $(SOURCES:.cpp=.o)
+CLEANFILES = $(OBJECTS) bin/$(DEST)
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
-	@mkdir -p $(BUILDDIR)
-	@echo " CC $<"; $(CC) $(CFLAGS) -c -o $@ $<
+all: make-src
+
+make-src: $(DEST)
+
+$(DEST): $(OBJECTS)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) $(OBJECTS) -o bin/$@
 
 clean:
-	@echo " Cleaning..."; rm -r $(BUILDDIR) $(BINDIR)/$(TARGET)*
+	rm -f $(CLEANFILES)
 
-.PHONY: clean
+debug:
+	$(MAKE) DEBUG=1 all
+
+format:
+	find . -name "*.cpp" -exec $(CLANG_FORMAT) -style=file -i {} \;
+	find . -name "*.h" -exec $(CLANG_FORMAT) -style=file -i {} \;
+
+.PHONY: all make-src clean debug format
