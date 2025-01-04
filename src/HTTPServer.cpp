@@ -145,8 +145,8 @@ void HTTPServer::stop() {
 
     if (listenSocket != INVALID_SOCKET) {
         // Close all open connections and delete Client's from memory
-        for (auto& x : clientMap)
-            disconnectClient(x.second, false);
+        for (auto& [clfd, cl] : clientMap)
+            disconnectClient(cl, false);
 
         // Clear the map
         clientMap.clear();
@@ -519,8 +519,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
             dc = true;
 
         // If Connection: close is specified, the connection should be terminated after the request is serviced
-        std::string connection_val = req->getHeaderValue("Connection");
-        if (connection_val.compare("close") == 0)
+        if (auto con_val = req->getHeaderValue("Connection"); con_val.compare("close") == 0)
             dc = true;
 
         sendResponse(cl, resp, dc);

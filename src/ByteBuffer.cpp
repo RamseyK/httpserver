@@ -49,13 +49,6 @@ ByteBuffer::ByteBuffer(const byte* arr, unsigned int size) {
 }
 
 /**
- * ByteBuffer Deconstructor
- *
- */
-ByteBuffer::~ByteBuffer() {
-}
-
-/**
  * Bytes Remaining
  * Returns the number of bytes from the current read position till the end of the buffer
  *

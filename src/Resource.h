@@ -72,8 +72,7 @@ public:
     // Get the file name
     std::string getName() const {
         std::string name = "";
-        size_t slash_pos = location.find_last_of("/");
-        if (slash_pos != std::string::npos)
+        if (auto slash_pos = location.find_last_of("/"); slash_pos != std::string::npos)
             name = location.substr(slash_pos + 1);
         return name;
     }
@@ -81,8 +80,7 @@ public:
     // Get the file extension
     std::string getExtension() const {
         std::string ext = "";
-        size_t ext_pos = location.find_last_of(".");
-        if (ext_pos != std::string::npos)
+        if (auto ext_pos = location.find_last_of("."); ext_pos != std::string::npos)
             ext = location.substr(ext_pos + 1);
         return ext;
     }

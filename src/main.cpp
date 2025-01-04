@@ -25,7 +25,7 @@
 #include "HTTPServer.h"
 #include "ResourceHost.h"
 
-static HTTPServer* svr;
+static std::unique_ptr<HTTPServer> svr;
 
 // Ignore signals with this function
 void handleSigPipe([[maybe_unused]] int snum) {
@@ -42,9 +42,12 @@ int main()
     // Parse config file
     std::map<std::string, std::string> config;
     std::fstream cfile;
-    std::string line, key, val;
+    std::string line;
+    std::string key;
+    std::string val;
     int epos = 0;
-    int drop_uid = 0, drop_gid = 0;
+    int drop_uid = 0;
+    int drop_gid = 0;
     cfile.open("server.config");
     if (!cfile.is_open()) {
         std::cout << "Unable to open server.config file in working directory" << std::endl;
@@ -101,10 +104,9 @@ int main()
     signal(SIGTERM, &handleTermSig);
 
     // Instantiate and start the server
-    svr = new HTTPServer(vhosts, atoi(config["port"].c_str()), config["diskpath"], drop_uid, drop_gid);
+    svr = std::make_unique<HTTPServer>(vhosts, atoi(config["port"].c_str()), config["diskpath"], drop_uid, drop_gid);
     if (!svr->start()) {
         svr->stop();
-        delete svr;
         return -1;
     }
 
@@ -113,7 +115,6 @@ int main()
 
     // Stop the server
     svr->stop();
-    delete svr;
 
     return 0;
 }

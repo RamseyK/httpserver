@@ -64,7 +64,7 @@ private:
 
 public:
 	explicit ResourceHost(std::string const& base);
-	~ResourceHost();
+	~ResourceHost() = default;
 
 	// Write a resource to the file system
 	void putResource(Resource* res, bool writeToDisk);

@@ -19,9 +19,6 @@
 #ifndef _BYTEBUFFER_H_
 #define _BYTEBUFFER_H_
 
-// Default number of bytes to allocate in the backing buffer if no size is provided
-constexpr unsigned int DEFAULT_SIZE = 4096;
-
 // If defined, utility functions within the class are enabled
 #define BB_UTILITY
 
@@ -35,6 +32,9 @@ constexpr unsigned int DEFAULT_SIZE = 4096;
 #endif
 
 using byte = unsigned char;
+
+// Default number of bytes to allocate in the backing buffer if no size is provided
+constexpr unsigned int DEFAULT_SIZE = 4096;
 
 class ByteBuffer {
 private:
@@ -80,7 +80,7 @@ private:
 public:
     explicit ByteBuffer(unsigned int size = DEFAULT_SIZE);
     explicit ByteBuffer(const byte* arr, unsigned int size);
-    virtual ~ByteBuffer();
+    virtual ~ByteBuffer() = default;
 
     unsigned int bytesRemaining() const; // Number of bytes from the current read position till the end of the buffer
     void clear(); // Clear our the vector and reset read and write positions

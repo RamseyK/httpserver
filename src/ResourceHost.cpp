@@ -22,9 +22,6 @@ ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
     // TODO: Check to see if the baseDiskPath is a valid path
 }
 
-ResourceHost::~ResourceHost() {
-}
-
 /**
  * Looks up a MIME type in the dictionary
  *
@@ -89,10 +86,11 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
     }
 
     std::string mimetype = lookupMimeType(res->getExtension());
-    if (mimetype.length() != 0)
+    if (mimetype.length() != 0) {
         res->setMimeType(mimetype);
-    else
+    } else {
         res->setMimeType("application/octet-stream");  // default to binary
+    }
 
     res->setData(fdata, len);
 
