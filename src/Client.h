@@ -50,7 +50,7 @@ public:
     }
 
     void addToSendQueue(SendQueueItem* item);
-    unsigned int sendQueueSize();
+    unsigned int sendQueueSize() const;
     SendQueueItem* nextInSendQueue();
     void dequeueFromSendQueue();
     void clearSendQueue();

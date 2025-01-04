@@ -163,7 +163,7 @@ void ByteBuffer::replace(byte key, byte rep, unsigned int start, bool firstOccur
 
 // Read Functions
 
-byte ByteBuffer::peek() {
+byte ByteBuffer::peek() const {
     return read<byte>(rpos);
 }
 

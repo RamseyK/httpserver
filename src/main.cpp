@@ -76,7 +76,7 @@ int main()
     std::string vhost_alias_str = config["vhost"];
     std::string delimiter = ",";
     std::string token;
-    size_t pos = vhost_alias_str.find(delimiter);
+    size_t pos = 0;
     do {
         pos = vhost_alias_str.find(delimiter);
         token = vhost_alias_str.substr(0, pos);

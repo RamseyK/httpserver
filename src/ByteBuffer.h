@@ -114,7 +114,7 @@ public:
     
     // Read
 
-    byte peek(); // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
+    byte peek() const; // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
     byte get(); // Relative get method. Reads the byte at the buffers current position then increments the position
     byte get(unsigned int index) const; // Absolute get method. Read byte at index
     void getBytes(byte* const out_buf, unsigned int out_len); // Absolute read into array buf of length len

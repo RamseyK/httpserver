@@ -39,7 +39,7 @@ void Client::addToSendQueue(SendQueueItem* item) {
  *
  * @return Integer representing number of items in this clients send queue
  */
-unsigned int Client::sendQueueSize() {
+unsigned int Client::sendQueueSize() const {
     return sendQueue.size();
 }
 
