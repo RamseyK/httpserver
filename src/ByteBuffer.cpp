@@ -27,9 +27,6 @@
 ByteBuffer::ByteBuffer(unsigned int size) {
     buf.reserve(size);
     clear();
-#ifdef BB_UTILITY
-    name = "";
-#endif
 }
 
 /**
@@ -49,10 +46,6 @@ ByteBuffer::ByteBuffer(byte* arr, unsigned int size) {
         clear();
         putBytes(arr, size);
     }
-    
-#ifdef BB_UTILITY
-    name = "";
-#endif
 }
 
 /**
@@ -260,13 +253,13 @@ void ByteBuffer::put(byte b, unsigned int index) {
     insert<byte>(b, index);
 }
 
-void ByteBuffer::putBytes(byte* b, unsigned int len) {
+void ByteBuffer::putBytes(const byte* b, unsigned int len) {
     // Insert the data one byte at a time into the internal buffer at position i+starting index
     for(unsigned int i = 0; i < len; i++)
         append<byte>(b[i]);
 }
 
-void ByteBuffer::putBytes(byte* b, unsigned int len, unsigned int index) {
+void ByteBuffer::putBytes(const byte* b, unsigned int len, unsigned int index) {
     wpos = index;
 
     // Insert the data one byte at a time into the internal buffer at position i+starting index

@@ -24,18 +24,15 @@
 class HTTPResponse : public HTTPMessage {
 private:
     // Response variables
-    int status;
-    std::string reason;
+    int status = 0;
+    std::string reason = "";
 
     void determineReasonStr();
     void determineStatusCode();
 
-protected:
-    virtual void init();
-
 public:
     HTTPResponse();
-    HTTPResponse(std::string sData);
+    HTTPResponse(std::string const& sData);
     HTTPResponse(byte *pData, unsigned int len);
     virtual ~HTTPResponse();
 

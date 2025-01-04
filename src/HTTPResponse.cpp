@@ -20,23 +20,15 @@
 #include "HTTPResponse.h"
 
 HTTPResponse::HTTPResponse() : HTTPMessage() {
-    this->init();
 }
 
-HTTPResponse::HTTPResponse(std::string sData) : HTTPMessage(sData) {
-    this->init();
+HTTPResponse::HTTPResponse(std::string const& sData) : HTTPMessage(sData) {
 }
 
 HTTPResponse::HTTPResponse(byte* pData, unsigned int len) : HTTPMessage(pData, len) {
-    this->init();
 }
 
 HTTPResponse::~HTTPResponse() {
-}
-
-void HTTPResponse::init() {
-    status = 0;
-    reason = "";
 }
 
 /**
@@ -58,6 +50,7 @@ void HTTPResponse::determineStatusCode() {
     } else if (reason.find("Not Implemented") != std::string::npos) {
         status = Status(NOT_IMPLEMENTED);
     } else {
+        status = Status(NOT_IMPLEMENTED);
     }
 }
 

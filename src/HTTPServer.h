@@ -82,14 +82,14 @@ class HTTPServer {
     void handleTrace(Client* cl, HTTPRequest* req);
 
     // Response
-    void sendStatusResponse(Client* cl, int status, std::string msg = "");
+    void sendStatusResponse(Client* cl, int status, std::string const& msg = "");
     void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
 
 public:
     bool canRun = false;
 
 public:
-    HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid=0, int drop_gid=0);
+    HTTPServer(std::vector<std::string> const& vhost_aliases, int port, std::string const& diskpath, int drop_uid=0, int drop_gid=0);
     ~HTTPServer();
 
     bool start();

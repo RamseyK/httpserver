@@ -20,23 +20,15 @@
 #include "HTTPRequest.h"
 
 HTTPRequest::HTTPRequest() : HTTPMessage() {
-    this->init();
 }
 
-HTTPRequest::HTTPRequest(std::string sData) : HTTPMessage(sData) {
-    this->init();
+HTTPRequest::HTTPRequest(std::string const& sData) : HTTPMessage(sData) {
 }
 
 HTTPRequest::HTTPRequest(byte* pData, unsigned int len) : HTTPMessage(pData, len) {
-    this->init();
 }
 
 HTTPRequest::~HTTPRequest() {
-}
-
-void HTTPRequest::init() {
-    method = 0;
-    requestUri = "";
 }
 
 /**
@@ -46,7 +38,7 @@ void HTTPRequest::init() {
  * @param name String representation of the Method
  * @return Corresponding Method ID, -1 if unable to find the method
  */
-int HTTPRequest::methodStrToInt(std::string const& name) {
+int HTTPRequest::methodStrToInt(std::string_view name) {
     // Method name cannot must be between 1 and 10 characters. Anything outside those bounds shouldn't be compared at all
     if (name.empty() || (name.size() >= 10))
         return -1;

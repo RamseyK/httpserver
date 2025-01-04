@@ -20,7 +20,7 @@ PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
 # LINK := -lpthread -lkqueue $(PRODFLAGS)
 # else
 # OSX / BSD Flags
-CFLAGS := -std=c++20 -Iinclude/ $(PRODFLAGS)
+CFLAGS := -std=c++23 -Iinclude/ $(PRODFLAGS)
 LINK := $(PRODFLAGS)
 # endif
  

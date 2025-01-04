@@ -42,7 +42,7 @@ private:
     std::vector<byte> buf;
 
 #ifdef BB_UTILITY
-    std::string name;
+    std::string name = "";
 #endif
 
     template <typename T> T read() {
@@ -63,7 +63,6 @@ private:
         if (size() < (wpos + s))
             buf.resize(wpos + s);
         memcpy(&buf[wpos], (byte*)&data, s);
-        //printf("writing %c to %i\n", (byte)data, wpos);
 
         wpos += s;
     }
@@ -136,8 +135,8 @@ public:
     void put(const ByteBuffer* src); // Relative write of the entire contents of another ByteBuffer (src)
     void put(byte b); // Relative write
     void put(byte b, unsigned int index); // Absolute write at index
-    void putBytes(byte* b, unsigned int len); // Relative write
-    void putBytes(byte* b, unsigned int len, unsigned int index); // Absolute write starting at index
+    void putBytes(const byte* b, unsigned int len); // Relative write
+    void putBytes(const byte* b, unsigned int len, unsigned int index); // Absolute write starting at index
     void putChar(char value); // Relative
     void putChar(char value, unsigned int index); // Absolute
     void putDouble(double value);

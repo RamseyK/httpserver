@@ -33,11 +33,11 @@ class SendQueueItem {
 private:
     byte* sendData;
     unsigned int sendSize;
-    unsigned int sendOffset;
+    unsigned int sendOffset = 0;
     bool disconnect; // Flag indicating if the client should be disconnected after this item is dequeued
 
 public:
-    SendQueueItem(byte* data, unsigned int size, bool dc) : sendData(data), sendSize(size), sendOffset(0), disconnect(dc) {
+    SendQueueItem(byte* data, unsigned int size, bool dc) : sendData(data), sendSize(size), disconnect(dc) {
     }
 
     ~SendQueueItem() {

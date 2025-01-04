@@ -122,7 +122,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
 		loadIndex = path + validIndexes[i];
 		// Found a suitable index file to load and return to the client
 		if (stat(loadIndex.c_str(), &sidx) != -1)
-			return readFile(loadIndex.c_str(), sidx);
+			return readFile(loadIndex, sidx);
 	}
 
 	// Make sure the webserver USER owns the directory

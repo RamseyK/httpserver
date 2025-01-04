@@ -79,19 +79,16 @@ enum Status {
 
 class HTTPMessage : public ByteBuffer {
 private:
-    std::map<std::string, std::string> *headers;
+    std::map<std::string, std::string> headers;
 
 protected:
-    std::string parseErrorStr;
+    std::string parseErrorStr = "";
 
-    std::string version;
+    std::string version = DEFAULT_HTTP_VERSION; // By default, all create() will indicate the version is whatever DEFAULT_HTTP_VERSION is
 
     // Message Body Data (Resource in the case of a response, extra parameters in the case of a request)
-    byte* data;
-    unsigned int dataLen;
-
-protected:
-    virtual void init();
+    byte* data = nullptr;
+    unsigned int dataLen = 0;
 
 public:
     HTTPMessage();

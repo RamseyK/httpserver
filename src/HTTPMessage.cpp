@@ -19,32 +19,16 @@
 #include "HTTPMessage.h"
 
 HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
-    this->init();
 }
 
 HTTPMessage::HTTPMessage(std::string const& sData) : ByteBuffer(sData.size() + 1) {
     putBytes((byte*)sData.c_str(), sData.size() + 1);
-    this->init();
 }
 
 HTTPMessage::HTTPMessage(byte* pData, unsigned int len) : ByteBuffer(pData, len) {
-    this->init();
 }
 
 HTTPMessage::~HTTPMessage() {
-    headers->clear();
-    delete headers;
-}
-
-void HTTPMessage::init() {
-    parseErrorStr = "";
-
-    data = nullptr;
-    dataLen = 0;
-
-    version = DEFAULT_HTTP_VERSION; // By default, all create() will indicate the version is whatever DEFAULT_HTTP_VERSION is
-
-    headers = new std::map<std::string, std::string>();
 }
 
 /**
@@ -69,8 +53,8 @@ void HTTPMessage::putLine(std::string str, bool crlf_end) {
  * 'Header: value'
  */
 void HTTPMessage::putHeaders() {
-    for (auto const& pair : *headers) {
-        std::string hdrstr = pair.first + ": " + pair.second;
+    for (auto const &[key, value] : headers) {
+        std::string hdrstr = key + ": " + value;
         putLine(hdrstr, true);
     }
 
@@ -272,7 +256,7 @@ void HTTPMessage::addHeader(std::string const& line) {
  * @param value String representation of the Header value
  */
 void HTTPMessage::addHeader(std::string const& key, std::string const& value) {
-    headers->insert(std::pair<std::string, std::string>(key, value));
+    headers.insert(std::pair<std::string, std::string>(key, value));
 }
 
 /**
@@ -285,7 +269,7 @@ void HTTPMessage::addHeader(std::string const& key, std::string const& value) {
 void HTTPMessage::addHeader(std::string const& key, int value) {
     std::stringstream sz;
     sz << value;
-    headers->insert(std::pair<std::string, std::string>(key, sz.str()));
+    headers.insert(std::pair<std::string, std::string>(key, sz.str()));
 }
 
 /**
@@ -300,10 +284,10 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) {
     std::string key_lower = "";
 
     // Lookup in map
-    auto it = headers->find(key);
+    auto it = headers.find(key);
 
     // Key wasn't found, try an all lowercase variant as some clients won't always use proper capitalization
-    if (it == headers->end()) {
+    if (it == headers.end()) {
 
         for (int i = 0; i < key.length(); i++) {
             c = key.at(i);
@@ -311,8 +295,8 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) {
         }
 
         // Still not found, return empty string to indicate the Header value doesnt exist
-        it = headers->find(key_lower);
-        if (it == headers->end())
+        it = headers.find(key_lower);
+        if (it == headers.end())
             return "";
     }
 
@@ -324,14 +308,15 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) {
  * Get Header String
  * Get the full formatted header string "Header: value" from the headers map at position index
  *
+ * @param index Position in the headers map to retrieve a formatted header string
  * @ret Formatted string with header name and value
  */
 std::string HTTPMessage::getHeaderStr(int index) const {
     int i = 0;
     std::string ret = "";
-    for (auto const& pair : *headers) {
+    for (auto const &[key, value] : headers) {
         if (i == index) {
-            ret = pair.first + ": " + pair.second;
+            ret = key + ": " + value;
             break;
         }
 
@@ -347,7 +332,7 @@ std::string HTTPMessage::getHeaderStr(int index) const {
  * @return size of the map
  */
 int HTTPMessage::getNumHeaders() {
-    return headers->size();
+    return headers.size();
 }
 
 /**
@@ -355,6 +340,6 @@ int HTTPMessage::getNumHeaders() {
  * Removes all headers from the internal map
  */
 void HTTPMessage::clearHeaders() {
-    headers->clear();
+    headers.clear();
 }
 

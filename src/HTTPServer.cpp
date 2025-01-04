@@ -28,7 +28,7 @@
  * @param drop_uid UID to setuid to after bind().  Ignored if 0
  * @param drop_gid GID to setgid to after bind().  Ignored if 0
  */
-HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid, int drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
+HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int port, std::string const& diskpath, int drop_uid, int drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
 
     std::cout << "Port: " << port << std::endl;
     std::cout << "Disk path: " << diskpath.c_str() << std::endl;
@@ -40,9 +40,9 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
     // Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
     char tmpstr[128] = {0};
     snprintf(tmpstr, sizeof(tmpstr), "localhost:%i", listenPort);
-    vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+    vhosts.try_emplace(std::string(tmpstr), resHost);
     snprintf(tmpstr, sizeof(tmpstr), "127.0.0.1:%i", listenPort);
-    vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+    vhosts.try_emplace(std::string(tmpstr), resHost);
 
     // Setup the resource host serving htdocs to provide for the vhost aliases
     for (auto const& vh : vhost_aliases) {
@@ -53,7 +53,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
 
         std::cout << "vhost: " << vh << std::endl;
         snprintf(tmpstr, sizeof(tmpstr), "%s:%i", vh.c_str(), listenPort);
-        vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
+        vhosts.try_emplace(std::string(tmpstr), resHost);
     }
 }
 
@@ -274,7 +274,7 @@ void HTTPServer::acceptConnection() {
     updateEvent(clfd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL); // Disabled initially
 
     // Add the client object to the client map
-    clientMap.insert(std::pair<int, Client*>(clfd, cl));
+    clientMap.try_emplace(clfd, cl);
 
     // Print the client's IP on connect
     std::cout << "[" << cl->getClientIP() << "] connected" << std::endl;
@@ -547,7 +547,7 @@ void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
 
     auto resp = new HTTPResponse();
     resp->setStatus(Status(OK));
-    resp->addHeader("Allow", allow.c_str());
+    resp->addHeader("Allow", allow);
     resp->addHeader("Content-Length", "0"); // Required
 
     sendResponse(cl, resp, true);
@@ -591,7 +591,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
  * @param status Status code corresponding to the enum in HTTPMessage.h
  * @param msg An additional message to append to the body text
  */
-void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
+void HTTPServer::sendStatusResponse(Client* cl, int status, std::string const& msg) {
     auto resp = new HTTPResponse();
     resp->setStatus(status);
 

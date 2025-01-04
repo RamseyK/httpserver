@@ -58,7 +58,7 @@ int main (int argc, const char * argv[])
         epos = line.find("=");
         key = line.substr(0, epos);
         val = line.substr(epos + 1, line.length());
-        config.insert(std::pair<std::string, std::string> (key, val));
+        config.try_emplace(key, val);
     }
     cfile.close();
 
