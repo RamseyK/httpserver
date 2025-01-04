@@ -21,7 +21,7 @@
 
 #include <cstdlib>
 
-typedef unsigned char byte;
+using byte = unsigned char;
 
 /**
  * SendQueueItem

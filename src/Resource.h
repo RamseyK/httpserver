@@ -21,7 +21,7 @@
 
 #include <string>
 
-typedef unsigned char byte;
+using byte = unsigned char;
 
 class Resource {
 
@@ -43,7 +43,7 @@ public:
         size = s;
     }
 
-    void setMimeType(std::string const& mt) {
+    void setMimeType(std::string_view mt) {
         mimeType = mt;
     }
 

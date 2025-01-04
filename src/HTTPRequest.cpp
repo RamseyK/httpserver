@@ -54,7 +54,7 @@ int HTTPRequest::methodStrToInt(std::string const& name) {
     // Loop through requestMethodStr array and attempt to match the 'name' with a known method in the array
     int ret = -1;
     for (unsigned int i = 0; i < NUM_METHODS; i++) {
-        if (strcmp(requestMethodStr[i], name.c_str()) == 0) {
+        if (name.compare(requestMethodStr[i]) == 0) {
             ret = i;
             break;
         }

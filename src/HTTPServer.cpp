@@ -28,7 +28,7 @@
  * @param drop_uid UID to setuid to after bind().  Ignored if 0
  * @param drop_gid GID to setgid to after bind().  Ignored if 0
  */
-HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid, int drop_gid) : listenPort(port), listenSocket(INVALID_SOCKET), dropUid(drop_uid), dropGid(drop_gid), kqfd(-1), canRun(false) {
+HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid, int drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
 
     std::cout << "Port: " << port << std::endl;
     std::cout << "Disk path: " << diskpath.c_str() << std::endl;

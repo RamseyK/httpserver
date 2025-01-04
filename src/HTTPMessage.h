@@ -117,7 +117,7 @@ public:
     void addHeader(std::string const& key, std::string const& value);
     void addHeader(std::string const& key, int value);
     std::string getHeaderValue(std::string const& key);
-    std::string getHeaderStr(int index);
+    std::string getHeaderStr(int index) const;
     int getNumHeaders();
     void clearHeaders();
 

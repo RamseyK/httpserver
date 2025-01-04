@@ -326,7 +326,7 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) {
  *
  * @ret Formatted string with header name and value
  */
-std::string HTTPMessage::getHeaderStr(int index) {
+std::string HTTPMessage::getHeaderStr(int index) const {
     int i = 0;
     std::string ret = "";
     for (auto const& pair : *headers) {

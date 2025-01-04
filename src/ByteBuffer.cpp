@@ -246,7 +246,7 @@ short ByteBuffer::getShort(unsigned int index) {
 
 // Write Functions
 
-void ByteBuffer::put(ByteBuffer* src) {
+void ByteBuffer::put(const ByteBuffer* src) {
     int len = src->size();
     for(int i = 0; i < len; i++)
         append<byte>(src->get(i));

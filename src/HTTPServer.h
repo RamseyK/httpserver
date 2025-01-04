@@ -49,14 +49,14 @@
 class HTTPServer {
     // Server Socket
     int listenPort;
-    int listenSocket; // Descriptor for the listening socket
+    int listenSocket = INVALID_SOCKET; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
     int dropUid; // setuid to this after bind()
     int dropGid; // setgid to this after bind()
 
     // Kqueue
     struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
-    int kqfd; // kqueue descriptor
+    int kqfd = -1; // kqueue descriptor
     struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
 
     // Client map, maps Socket descriptor to Client object
@@ -86,7 +86,7 @@ class HTTPServer {
     void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
 
 public:
-    bool canRun;
+    bool canRun = false;
 
 public:
     HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid=0, int drop_gid=0);

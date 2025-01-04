@@ -25,7 +25,7 @@
 
 #include "SendQueueItem.h"
 
-typedef unsigned char byte;
+using byte = unsigned char;
 
 class Client {
     int socketDesc; // Socket Descriptor

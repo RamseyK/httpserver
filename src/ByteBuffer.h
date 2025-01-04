@@ -34,7 +34,7 @@
 #include <stdio.h>
 #endif
 
-typedef unsigned char byte;
+using byte = unsigned char;
 
 class ByteBuffer {
 private:
@@ -133,7 +133,7 @@ public:
 
     // Write
 
-    void put(ByteBuffer* src); // Relative write of the entire contents of another ByteBuffer (src)
+    void put(const ByteBuffer* src); // Relative write of the entire contents of another ByteBuffer (src)
     void put(byte b); // Relative write
     void put(byte b, unsigned int index); // Absolute write at index
     void putBytes(byte* b, unsigned int len); // Relative write
