@@ -149,8 +149,8 @@ std::string HTTPMessage::getStrElement(char delim) {
         return "";
 
     // Grab the std::string from the byte buffer up to the delimiter
-    char *str = new char[size];
-    bzero(str, size);
+    auto str = new char[size];
+    memset(str, 0x00, size);
     getBytes((byte*)str, size);
     str[size - 1] = 0x00; // NULL termination
     ret.assign(str);
@@ -168,7 +168,8 @@ std::string HTTPMessage::getStrElement(char delim) {
  * Parse headers will move the read position past the blank line that signals the end of the headers
  */
 void HTTPMessage::parseHeaders() {
-    std::string hline = "", app = "";
+    std::string hline = "";
+    std::string app = "";
 
     // Get the first header
     hline = getLine();
@@ -208,10 +209,9 @@ bool HTTPMessage::parseBody() {
     // contentLen should NOT exceed the remaining number of bytes in the buffer
     // Add 1 to bytesRemaining so it includes the byte at the current read position
     if (contentLen > bytesRemaining() + 1) {
-        /*
         // If it exceeds, read only up to the number of bytes remaining
-        dataLen = bytesRemaining();
-        */
+        // dataLen = bytesRemaining();
+
         // If it exceeds, there's a potential security issue and we can't reliably parse
         std::stringstream pes;
         pes << "Content-Length (" << hlenstr << ") is greater than remaining bytes (" << bytesRemaining() << ")";
@@ -243,8 +243,9 @@ bool HTTPMessage::parseBody() {
  *
  * @param string containing formatted header: value
  */
-void HTTPMessage::addHeader(std::string line) {
-    std::string key = "", value = "";
+void HTTPMessage::addHeader(std::string const line) {
+    std::string key = "";
+    std::string value = "";
     size_t kpos;
     int i = 0;
     kpos = line.find(':');
@@ -271,7 +272,7 @@ void HTTPMessage::addHeader(std::string line) {
  * @param key String representation of the Header Key
  * @param value String representation of the Header value
  */
-void HTTPMessage::addHeader(std::string key, std::string value) {
+void HTTPMessage::addHeader(std::string const key, std::string const value) {
     headers->insert(std::pair<std::string, std::string>(key, value));
 }
 
@@ -282,7 +283,7 @@ void HTTPMessage::addHeader(std::string key, std::string value) {
  * @param key String representation of the Header Key
  * @param value Integer representation of the Header value
  */
-void HTTPMessage::addHeader(std::string key, int value) {
+void HTTPMessage::addHeader(std::string const key, int value) {
     std::stringstream sz;
     sz << value;
     headers->insert(std::pair<std::string, std::string>(key, sz.str()));
@@ -294,7 +295,7 @@ void HTTPMessage::addHeader(std::string key, int value) {
  *
  * @param key Key to identify the header
  */
-std::string HTTPMessage::getHeaderValue(std::string key) {
+std::string HTTPMessage::getHeaderValue(std::string const key) {
 
     char c;
     std::string key_lower = "";

@@ -37,11 +37,11 @@ public:
     Client(int fd, sockaddr_in addr);
     ~Client();
 
-    sockaddr_in getClientAddr() {
+    sockaddr_in getClientAddr() const {
         return clientAddr;
     }
 
-    int getSocket() {
+    int getSocket() const {
         return socketDesc;
     }
 

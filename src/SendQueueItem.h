@@ -55,19 +55,19 @@ public:
 		sendOffset = off;
 	}
 
-	byte* getData() {
+	byte* getData() const {
 		return sendData;
 	}
 
-	unsigned int getSize() {
+	unsigned int getSize() const {
 		return sendSize;
 	}
 
-	bool getDisconnect() {
+	bool getDisconnect() const {
 		return disconnect;
 	}
 
-	unsigned int getOffset() {
+	unsigned int getOffset() const {
 		return sendOffset;
 	}
 

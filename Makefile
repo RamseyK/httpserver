@@ -16,11 +16,11 @@ PRODFLAGS := -Wall -O2 -fstack-check -fstack-protector-all
 
 # ifeq ($(UNAME), Linux)
 # # Linux Flags - only supported if libkqueue is compiled from Github sources
-# CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
+# CFLAGS := -std=c++20 -Iinclude/ $(PRODFLAGS)
 # LINK := -lpthread -lkqueue $(PRODFLAGS)
 # else
 # OSX / BSD Flags
-CFLAGS := -std=c++14 -Iinclude/ $(PRODFLAGS)
+CFLAGS := -std=c++20 -Iinclude/ $(PRODFLAGS)
 LINK := $(PRODFLAGS)
 # endif
  

@@ -60,7 +60,7 @@ private:
 	Resource* readDirectory(std::string path, struct stat sb);
 
 	// Provide a string rep of the directory listing based on URI
-	std::string generateDirList(std::string dirPath);
+	std::string generateDirList(std::string dirPath) const;
 
 public:
 	ResourceHost(std::string base);

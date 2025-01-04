@@ -70,15 +70,15 @@ Resource* ResourceHost::readFile(std::string path, struct stat sb) {
 	len = sb.st_size;
 
 	// Allocate memory for contents of file and read in the contents
-	byte* fdata = new byte[len];
-	bzero(fdata, len);
+	auto fdata = new byte[len];
+	memset(fdata, 0x00, len);
 	file.read((char*)fdata, len);
 
 	// Close the file
 	file.close();
 
 	// Create a new Resource object and setup it's contents
-	Resource* res = new Resource(path);
+	auto res = new Resource(path);
 	std::string name = res->getName();
 	if (name.length() == 0) {
 		delete res;
@@ -136,8 +136,8 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
 	std::string listing = generateDirList(path);
 
 	unsigned int slen = listing.length();
-	char* sdata = new char[slen];
-	bzero(sdata, slen);
+	auto sdata = new char[slen];
+	memset(sdata, 0x00, slen);
 	strncpy(sdata, listing.c_str(), slen);
 
 	res = new Resource(path, true);
@@ -153,7 +153,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
  * @param path Full disk path of the file
  * @return HTML string representation of the directory. Blank string if invalid directory
  */
-std::string ResourceHost::generateDirList(std::string path) {
+std::string ResourceHost::generateDirList(std::string path) const {
 	// Get just the relative uri from the entire path by stripping out the baseDiskPath from the beginning
 	size_t uri_pos = path.find(baseDiskPath);
 	std::string uri = "?";

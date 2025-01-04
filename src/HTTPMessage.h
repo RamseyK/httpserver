@@ -113,17 +113,17 @@ public:
     bool parseBody();
 
     // Header Map manipulation
-    void addHeader(std::string line);
-    void addHeader(std::string key, std::string value);
-    void addHeader(std::string key, int value);
-    std::string getHeaderValue(std::string key);
+    void addHeader(std::string const line);
+    void addHeader(std::string const key, std::string const value);
+    void addHeader(std::string const key, int value);
+    std::string getHeaderValue(std::string const key);
     std::string getHeaderStr(int index);
     int getNumHeaders();
     void clearHeaders();
 
     // Getters & Setters
 
-    std::string getParseError() {
+    std::string getParseError() const {
         return parseErrorStr;
     }
 
@@ -131,7 +131,7 @@ public:
         version = v;
     }
 
-    std::string getVersion() {
+    std::string getVersion() const {
         return version;
     }
 
@@ -144,7 +144,7 @@ public:
         return data;
     }
 
-    unsigned int getDataLength() {
+    unsigned int getDataLength() const {
         return dataLen;
     }
 };

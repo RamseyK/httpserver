@@ -89,7 +89,7 @@ void ByteBuffer::clear() {
  * @return A pointer to the newly cloned ByteBuffer. NULL if no more memory available
  */
 ByteBuffer* ByteBuffer::clone() {
-    ByteBuffer* ret = new ByteBuffer(buf.size());
+    auto ret = new ByteBuffer(buf.size());
 
     // Copy data
     for(unsigned int i = 0; i < buf.size(); i++) {
@@ -110,7 +110,7 @@ ByteBuffer* ByteBuffer::clone() {
  * @param other A pointer to a ByteBuffer to compare to this one
  * @return True if the internal buffers match. False if otherwise
  */
-bool ByteBuffer::equals(ByteBuffer* other) {
+bool ByteBuffer::equals(ByteBuffer* other) const {
     // If sizes aren't equal, they can't be equal
     if(size() != other->size())
         return false;
@@ -143,7 +143,7 @@ void ByteBuffer::resize(unsigned int newSize) {
  *
  * @return size of the internal buffer
  */
-unsigned int ByteBuffer::size() {
+unsigned int ByteBuffer::size() const {
     return buf.size();
 }
 
@@ -185,7 +185,7 @@ byte ByteBuffer::get() {
     return read<byte>();
 }
 
-byte ByteBuffer::get(unsigned int index) {
+byte ByteBuffer::get(unsigned int index) const {
     return read<byte>(index);
 }
 
@@ -327,16 +327,16 @@ void ByteBuffer::setName(std::string n) {
     name = n;
 }
 
-std::string ByteBuffer::getName() {
+std::string ByteBuffer::getName() const {
     return name;
 }
 
-void ByteBuffer::printInfo() {
+void ByteBuffer::printInfo() const {
     unsigned int length = buf.size();
     std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". Info Print" << std::endl;
 }
 
-void ByteBuffer::printAH() {
+void ByteBuffer::printAH() const {
     unsigned int length = buf.size();
     std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". ASCII & Hex Print" << std::endl;
     for(unsigned int i = 0; i < length; i++) {
@@ -349,7 +349,7 @@ void ByteBuffer::printAH() {
     printf("\n");
 }
 
-void ByteBuffer::printAscii() {
+void ByteBuffer::printAscii() const {
     unsigned int length = buf.size();
     std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". ASCII Print" << std::endl;
     for(unsigned int i = 0; i < length; i++) {
@@ -358,7 +358,7 @@ void ByteBuffer::printAscii() {
     printf("\n");
 }
 
-void ByteBuffer::printHex() {
+void ByteBuffer::printHex() const {
     unsigned int length = buf.size();
     std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". Hex Print" << std::endl;
     for(unsigned int i = 0; i < length; i++) {
@@ -367,7 +367,7 @@ void ByteBuffer::printHex() {
     printf("\n");
 }
 
-void ByteBuffer::printPosition() {
+void ByteBuffer::printPosition() const {
     unsigned int length = buf.size();
     std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << " Read Pos: " << rpos << ". Write Pos: " << wpos << std::endl;
 }

@@ -114,7 +114,7 @@ byte* HTTPResponse::create() {
     }
 
     // Allocate space for the returned byte array and return it
-    byte* createRetData = new byte[size()];
+    auto createRetData = new byte[size()];
     setReadPos(0);
     getBytes(createRetData, size());
 

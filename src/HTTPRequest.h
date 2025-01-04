@@ -49,7 +49,7 @@ public:
         method = m;
     }
 
-    int getMethod() {
+    int getMethod() const {
         return method;
     }
 
@@ -57,7 +57,7 @@ public:
         requestUri = u;
     }
 
-    std::string getRequestUri() {
+    std::string getRequestUri() const {
         return requestUri;
     }
 };

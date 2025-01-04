@@ -86,9 +86,9 @@ public:
     void clear(); // Clear our the vector and reset read and write positions
     ByteBuffer* clone(); // Return a new instance of a bytebuffer with the exact same contents and the same state (rpos, wpos)
     //ByteBuffer compact(); // TODO?
-    bool equals(ByteBuffer* other); // Compare if the contents are equivalent
+    bool equals(ByteBuffer* other) const; // Compare if the contents are equivalent
     void resize(unsigned int newSize);
-    unsigned int size(); // Size of internal vector
+    unsigned int size() const; // Size of internal vector
     
     // Basic Searching (Linear)
     template <typename T> int find(T key, unsigned int start=0) {
@@ -116,7 +116,7 @@ public:
 
     byte peek(); // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
     byte get(); // Relative get method. Reads the byte at the buffers current position then increments the position
-    byte get(unsigned int index); // Absolute get method. Read byte at index
+    byte get(unsigned int index) const; // Absolute get method. Read byte at index
     void getBytes(byte* buf, unsigned int len); // Absolute read into array buf of length len
     char getChar(); // Relative
     char getChar(unsigned int index); // Absolute
@@ -157,7 +157,7 @@ public:
         rpos = r;
     }
 
-    int getReadPos() {
+    int getReadPos() const {
         return rpos;
     }
 
@@ -165,19 +165,19 @@ public:
         wpos = w;
     }
 
-    int getWritePos() {
+    int getWritePos() const {
         return wpos;
     }
 
     // Utility Functions
 #ifdef BB_UTILITY
     void setName(std::string n);
-    std::string getName();
-    void printInfo();
-    void printAH();
-    void printAscii();
-    void printHex();
-    void printPosition();
+    std::string getName() const;
+    void printInfo() const;
+    void printAH() const;
+    void printAscii() const;
+    void printHex() const;
+    void printPosition() const;
 #endif
 };
 

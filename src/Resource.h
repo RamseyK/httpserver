@@ -49,28 +49,28 @@ public:
 
     // Getters
 
-    std::string getMimeType() {
+    std::string getMimeType() const {
         return mimeType;
     }
 
-    std::string getLocation() {
+    std::string getLocation() const {
         return location;
     }
 
-    bool isDirectory() {
+    bool isDirectory() const {
         return directory;
     }
 
-    byte* getData() {
+    byte* getData() const {
         return data;
     }
 
-    unsigned int getSize() {
+    unsigned int getSize() const {
         return size;
     }
 
     // Get the file name
-    std::string getName() {
+    std::string getName() const {
         std::string name = "";
         size_t slash_pos = location.find_last_of("/");
         if (slash_pos != std::string::npos)
@@ -79,7 +79,7 @@ public:
     }
 
     // Get the file extension
-    std::string getExtension() {
+    std::string getExtension() const {
         std::string ext = "";
         size_t ext_pos = location.find_last_of(".");
         if (ext_pos != std::string::npos)

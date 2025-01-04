@@ -49,7 +49,7 @@ public:
         determineReasonStr();
     }
 
-    std::string getReason() {
+    std::string getReason() const {
         return reason;
     }
 };

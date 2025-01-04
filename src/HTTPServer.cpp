@@ -40,14 +40,14 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
     std::cout << "Disk path: " << diskpath.c_str() << std::endl;
 
     // Create a resource host serving the base path ./htdocs on disk
-    ResourceHost* resHost = new ResourceHost(diskpath);
+    auto resHost = new ResourceHost(diskpath);
     hostList.push_back(resHost);
 
     // Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
     char tmpstr[128] = {0};
-    sprintf(tmpstr, "localhost:%i", listenPort);
+    snprintf(tmpstr, sizeof(tmpstr), "localhost:%i", listenPort);
     vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
-    sprintf(tmpstr, "127.0.0.1:%i", listenPort);
+    snprintf(tmpstr, sizeof(tmpstr), "127.0.0.1:%i", listenPort);
     vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 
     // Setup the resource host serving htdocs to provide for the vhost aliases
@@ -58,7 +58,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
         }
 
         std::cout << "vhost: " << vh << std::endl;
-        sprintf(tmpstr, "%s:%i", vh.c_str(), listenPort);
+        snprintf(tmpstr, sizeof(tmpstr), "%s:%i", vh.c_str(), listenPort);
         vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
     }
 }
@@ -273,7 +273,7 @@ void HTTPServer::acceptConnection() {
     fcntl(clfd, F_SETFL, O_NONBLOCK);
 
     // Instance Client object
-    Client *cl = new Client(clfd, clientAddr);
+    auto cl = new Client(clfd, clientAddr);
 
     // Add kqueue event to track the new client socket for READ and WRITE events
     updateEvent(clfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -351,8 +351,8 @@ void HTTPServer::readClient(Client *cl, int data_len) {
         data_len = 1400;
 
     HTTPRequest* req;
-    char* pData = new char[data_len];
-    bzero(pData, data_len);
+    auto pData = new char[data_len];
+    memset(pData, 0x00, data_len);
 
     // Receive data on the wire into pData
     int flags = 0;
@@ -510,7 +510,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
     if (r != nullptr) { // Exists
         std::cout << "[" << cl->getClientIP() << "] " << "Sending file: " << uri << std::endl;
 
-        HTTPResponse* resp = new HTTPResponse();
+        auto resp = new HTTPResponse();
         resp->setStatus(Status(OK));
         resp->addHeader("Content-Type", r->getMimeType());
         resp->addHeader("Content-Length", r->getSize());
@@ -551,7 +551,7 @@ void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
     // For now, we'll always return the capabilities of the server instead of figuring it out for each resource
     std::string allow = "HEAD, GET, OPTIONS, TRACE";
 
-    HTTPResponse* resp = new HTTPResponse();
+    auto resp = new HTTPResponse();
     resp->setStatus(Status(OK));
     resp->addHeader("Allow", allow.c_str());
     resp->addHeader("Content-Length", "0"); // Required
@@ -571,13 +571,13 @@ void HTTPServer::handleOptions(Client* cl, HTTPRequest* req) {
 void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
     // Get a byte array representation of the request
     unsigned int len = req->size();
-    byte* buf = new byte[len];
-    bzero(buf, len);
+    auto buf = new byte[len];
+    memset(buf, 0x00, len);
     req->setReadPos(0); // Set the read position at the beginning since the request has already been read to the end
     req->getBytes(buf, len);
 
     // Send a response with the entire request as the body
-    HTTPResponse* resp = new HTTPResponse();
+    auto resp = new HTTPResponse();
     resp->setStatus(Status(OK));
     resp->addHeader("Content-Type", "message/http");
     resp->addHeader("Content-Length", len);
@@ -598,7 +598,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
  * @param msg An additional message to append to the body text
  */
 void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
-    HTTPResponse* resp = new HTTPResponse();
+    auto resp = new HTTPResponse();
     resp->setStatus(Status(status));
 
     // Body message: Reason string + additional msg
@@ -607,8 +607,8 @@ void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
         body +=  ": " + msg;
 
     unsigned int slen = body.length();
-    char* sdata = new char[slen];
-    bzero(sdata, slen);
+    auto sdata = new char[slen];
+    memset(sdata, 0x00, slen);
     strncpy(sdata, body.c_str(), slen);
 
     resp->addHeader("Content-Type", "text/plain");
