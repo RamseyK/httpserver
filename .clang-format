@@ -1,4 +1,0 @@
-BasedOnStyle: Chromium
-ColumnLimit: 120
-Language: Cpp
-Standard: c++20

@@ -44,8 +44,4 @@ clean:
 debug:
 	$(MAKE) DEBUG=1 all
 
-format:
-	find . -name "*.cpp" -exec $(CLANG_FORMAT) -style=file -i {} \;
-	find . -name "*.h" -exec $(CLANG_FORMAT) -style=file -i {} \;
-
-.PHONY: all make-src clean debug format
+.PHONY: all make-src clean debug
