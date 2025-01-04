@@ -63,10 +63,7 @@ int main()
     cfile.close();
 
     // Validate at least vhost, port, and diskpath are present
-    auto it_vhost = config.find("vhost");
-    auto it_port = config.find("port");
-    auto it_path = config.find("diskpath");
-    if (it_vhost == config.end() || it_port == config.end() || it_path == config.end()) {
+    if (!config.contains("vhost") || !config.contains("port") || !config.contains("port")) {
         std::cout << "vhost, port, and diskpath must be supplied in the config, at a minimum" << std::endl;
         return -1;
     }
@@ -85,7 +82,7 @@ int main()
     } while (pos != std::string::npos);
 
     // Check for optional drop_uid, drop_gid.  Ensure both are set
-    if (config.find("drop_uid") != config.end() && config.find("drop_gid") != config.end()) {
+    if (config.contains("drop_uid") && config.contains("drop_gid")) {
         drop_uid = atoi(config["drop_uid"].c_str());
         drop_gid = atoi(config["drop_gid"].c_str());
 

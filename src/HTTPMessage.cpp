@@ -51,7 +51,7 @@ void HTTPMessage::putLine(std::string str, bool crlf_end) {
  */
 void HTTPMessage::putHeaders() {
     for (auto const &[key, value] : headers) {
-        std::string hdrstr = key + ": " + value;
+        std::string hdrstr = std::format("{}: {}", key, value);
         putLine(hdrstr, true);
     }
 
@@ -313,7 +313,7 @@ std::string HTTPMessage::getHeaderStr(int index) const {
     std::string ret = "";
     for (auto const &[key, value] : headers) {
         if (i == index) {
-            ret = key + ": " + value;
+            ret = std::format("{}: {}", key, value);
             break;
         }
 

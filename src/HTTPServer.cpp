@@ -38,11 +38,8 @@ HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int port, 
     hostList.push_back(resHost);
 
     // Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
-    char tmpstr[128] = {0};
-    snprintf(tmpstr, sizeof(tmpstr), "localhost:%i", listenPort);
-    vhosts.try_emplace(std::string(tmpstr), resHost);
-    snprintf(tmpstr, sizeof(tmpstr), "127.0.0.1:%i", listenPort);
-    vhosts.try_emplace(std::string(tmpstr), resHost);
+    vhosts.try_emplace(std::format("localhost:{}", listenPort), resHost);
+    vhosts.try_emplace(std::format("127.0.0.1:{}", listenPort), resHost);
 
     // Setup the resource host serving htdocs to provide for the vhost aliases
     for (auto const& vh : vhost_aliases) {
@@ -52,8 +49,7 @@ HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int port, 
         }
 
         std::cout << "vhost: " << vh << std::endl;
-        snprintf(tmpstr, sizeof(tmpstr), "%s:%i", vh.c_str(), listenPort);
-        vhosts.try_emplace(std::string(tmpstr), resHost);
+        vhosts.try_emplace(std::format("{}:{}", vh, listenPort), resHost);
     }
 }
 
@@ -225,7 +221,7 @@ void HTTPServer::process() {
                 }
 
                 if (evList[i].filter == EVFILT_READ) {
-                    //std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
+                    // std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
                     // Read and process any pending data on the wire
                     readClient(cl, evList[i].data); // data contains the number of bytes waiting to be read
 
@@ -233,10 +229,10 @@ void HTTPServer::process() {
                     updateEvent(evList[i].ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
                     updateEvent(evList[i].ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
                 } else if (evList[i].filter == EVFILT_WRITE) {
-                    //std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
+                    // std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
                     // Write any pending data to the client - writeClient returns true if there is additional data to send in the client queue
                     if (!writeClient(cl, evList[i].data)) { // data contains number of bytes that can be written
-                        //std::cout << "switch back to read filter" << std::endl;
+                        // std::cout << "switch back to read filter" << std::endl;
                         // If theres nothing more to send, Have kqueue disable tracking of WRITE events and enable tracking of READ events
                         updateEvent(evList[i].ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
                         updateEvent(evList[i].ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
@@ -421,7 +417,7 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
     else
         disconnect = true;
 
-    //std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
+    // std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
 
     // SendQueueItem isnt needed anymore. Dequeue and delete
     if (item->getOffset() >= item->getSize())
