@@ -29,11 +29,11 @@ private:
 public:
     HTTPRequest();
     explicit HTTPRequest(std::string const& sData);
-    explicit HTTPRequest(const byte *pData, unsigned int len);
-    ~HTTPRequest() = default;
+    explicit HTTPRequest(const byte* pData, unsigned int len);
+    ~HTTPRequest() override = default;
 
-    virtual byte *create();
-    virtual bool parse();
+    byte* create() override;
+    bool parse() override;
 
     // Helper functions
 

@@ -63,7 +63,7 @@ private:
 	std::string generateDirList(std::string const& dirPath) const;
 
 public:
-	ResourceHost(std::string const& base);
+	explicit ResourceHost(std::string const& base);
 	~ResourceHost();
 
 	// Write a resource to the file system

@@ -275,7 +275,7 @@ void HTTPMessage::addHeader(std::string const& key, int value) {
  *
  * @param key Key to identify the header
  */
-std::string HTTPMessage::getHeaderValue(std::string const& key) {
+std::string HTTPMessage::getHeaderValue(std::string const& key) const {
 
     char c;
     std::string key_lower = "";

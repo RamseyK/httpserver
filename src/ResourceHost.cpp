@@ -160,8 +160,8 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
     std::stringstream ret;
     ret << "<html><head><title>" << uri << "</title></head><body>";
 
-    DIR *dir;
-    struct dirent *ent;
+    DIR* dir;
+    const struct dirent* ent;
 
     dir = opendir(path.c_str());
     if (dir == nullptr)

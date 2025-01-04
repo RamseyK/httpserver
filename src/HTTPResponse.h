@@ -33,11 +33,11 @@ private:
 public:
     HTTPResponse();
     explicit HTTPResponse(std::string const& sData);
-    explicit HTTPResponse(const byte *pData, unsigned int len);
-    ~HTTPResponse() = default;
+    explicit HTTPResponse(const byte* pData, unsigned int len);
+    ~HTTPResponse() override = default;
 
-    byte* create() final;
-    bool parse() final;
+    byte* create() override;
+    bool parse() override;
 
     // Accessors & Mutators
 

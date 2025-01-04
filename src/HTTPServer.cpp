@@ -173,7 +173,7 @@ void HTTPServer::stop() {
  * Update the kqueue by creating the appropriate kevent structure
  * See kqueue documentation for parameter descriptions
  */
-void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void *udata) {
+void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void* udata) {
     struct kevent kev;
     EV_SET(&kev, ident, filter, flags, fflags, data, udata);
     kevent(kqfd, &kev, 1, NULL, 0, NULL);
@@ -198,45 +198,49 @@ void HTTPServer::process() {
 
         // Loop through only the sockets that have changed in the evList array
         for (int i = 0; i < nev; i++) {
-            if (evList[i].ident == (unsigned int)listenSocket) { // A client is waiting to connect
+
+            // A client is waiting to connect
+            if (evList[i].ident == (unsigned int)listenSocket) {
                 acceptConnection();
-            } else { // Client descriptor has triggered an event
-                cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
-                if (cl == nullptr) {
-                    std::cout << "Could not find client" << std::endl;
-                    // Remove socket events from kqueue
-                    updateEvent(evList[i].ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-                    updateEvent(evList[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+                continue;
+            }
 
-                    // Close the socket descriptor
-                    close(evList[i].ident);
+            // Client descriptor has triggered an event
+            cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
+            if (cl == nullptr) {
+                std::cout << "Could not find client" << std::endl;
+                // Remove socket events from kqueue
+                updateEvent(evList[i].ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+                updateEvent(evList[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 
-                    continue;
-                }
+                // Close the socket descriptor
+                close(evList[i].ident);
 
-                // Client wants to disconnect
-                if (evList[i].flags & EV_EOF) {
-                    disconnectClient(cl, true);
-                    continue;
-                }
+                continue;
+            }
 
-                if (evList[i].filter == EVFILT_READ) {
-                    // std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
-                    // Read and process any pending data on the wire
-                    readClient(cl, evList[i].data); // data contains the number of bytes waiting to be read
+            // Client wants to disconnect
+            if (evList[i].flags & EV_EOF) {
+                disconnectClient(cl, true);
+                continue;
+            }
 
-                    // Have kqueue disable tracking of READ events and enable tracking of WRITE events
-                    updateEvent(evList[i].ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-                    updateEvent(evList[i].ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
-                } else if (evList[i].filter == EVFILT_WRITE) {
-                    // std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
-                    // Write any pending data to the client - writeClient returns true if there is additional data to send in the client queue
-                    if (!writeClient(cl, evList[i].data)) { // data contains number of bytes that can be written
-                        // std::cout << "switch back to read filter" << std::endl;
-                        // If theres nothing more to send, Have kqueue disable tracking of WRITE events and enable tracking of READ events
-                        updateEvent(evList[i].ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
-                        updateEvent(evList[i].ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-                    }
+            if (evList[i].filter == EVFILT_READ) {
+                // std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
+                // Read and process any pending data on the wire
+                readClient(cl, evList[i].data); // data contains the number of bytes waiting to be read
+
+                // Have kqueue disable tracking of READ events and enable tracking of WRITE events
+                updateEvent(evList[i].ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+                updateEvent(evList[i].ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+            } else if (evList[i].filter == EVFILT_WRITE) {
+                // std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
+                // Write any pending data to the client - writeClient returns true if there is additional data to send in the client queue
+                if (!writeClient(cl, evList[i].data)) { // data contains number of bytes that can be written
+                    // std::cout << "switch back to read filter" << std::endl;
+                    // If theres nothing more to send, Have kqueue disable tracking of WRITE events and enable tracking of READ events
+                    updateEvent(evList[i].ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+                    updateEvent(evList[i].ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
                 }
             }
         } // Event loop
@@ -302,7 +306,7 @@ Client* HTTPServer::getClient(int clfd) {
  * @param mapErase When true, remove the client from the client map. Needed if operations on the
  * client map are being performed and we don't want to remove the map entry right away
  */
-void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
+void HTTPServer::disconnectClient(Client* cl, bool mapErase) {
     if (cl == nullptr)
         return;
 
@@ -331,7 +335,7 @@ void HTTPServer::disconnectClient(Client *cl, bool mapErase) {
  * @param cl Pointer to Client that sent the data
  * @param data_len Number of bytes waiting to be read
  */
-void HTTPServer::readClient(Client *cl, int data_len) {
+void HTTPServer::readClient(Client* cl, int data_len) {
     if (cl == nullptr)
         return;
 
@@ -380,9 +384,6 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
 
     int actual_sent = 0; // Actual number of bytes sent as returned by send()
     int attempt_sent = 0; // Bytes that we're attempting to send now
-    int remaining = 0; // Size of data left to send for the item
-    bool disconnect = false;
-    byte* pData = nullptr;
 
     // The amount of available bytes to write, reported by the OS, cant really be trusted...
     if (avail_bytes > 1400) {
@@ -398,9 +399,11 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
     if (item == nullptr)
         return false;
 
-    pData = item->getData();
-    remaining = item->getSize() - item->getOffset();
-    disconnect = item->getDisconnect();
+    const byte* pData = item->getData();
+
+    // Size of data left to send for the item
+    int remaining = item->getSize() - item->getOffset();
+    bool disconnect = item->getDisconnect();
 
     if (avail_bytes >= remaining) {
         // Send buffer is bigger than we need, rest of item can be sent
@@ -439,7 +442,7 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
  * @param cl Client object where request originated from
  * @param req HTTPRequest object filled with raw packet data
  */
-void HTTPServer::handleRequest(Client *cl, HTTPRequest* req) {
+void HTTPServer::handleRequest(Client* cl, HTTPRequest* req) {
     // Parse the request
     // If there's an error, report it and send a server error in response
     if (!req->parse()) {
@@ -558,7 +561,7 @@ void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
+void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
     // Get a byte array representation of the request
     unsigned int len = req->size();
     auto buf = new byte[len];
@@ -626,7 +629,7 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
     std::string tstr;
     char tbuf[36] = {0};
     time_t rawtime;
-    struct tm* ptm;
+    const struct tm* ptm;
     time(&rawtime);
     ptm = gmtime(&rawtime);
     // Ex: Fri, 31 Dec 1999 23:59:59 GMT
@@ -651,7 +654,7 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
  * 
  * @param req State of the request
  */
-ResourceHost* HTTPServer::getResourceHostForRequest(HTTPRequest* req) {
+ResourceHost* HTTPServer::getResourceHostForRequest(const HTTPRequest* req) {
     // Determine the appropriate vhost
     ResourceHost* resHost = nullptr;
     std::string host = "";

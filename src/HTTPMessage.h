@@ -93,8 +93,8 @@ protected:
 public:
     HTTPMessage();
     explicit HTTPMessage(std::string const& sData);
-    explicit HTTPMessage(const byte *pData, unsigned int len);
-    virtual ~HTTPMessage() = default;
+    explicit HTTPMessage(const byte* pData, unsigned int len);
+    ~HTTPMessage() override = default;
 
     virtual byte* create() = 0;
     virtual bool parse() = 0;
@@ -113,7 +113,7 @@ public:
     void addHeader(std::string const& line);
     void addHeader(std::string const& key, std::string const& value);
     void addHeader(std::string const& key, int value);
-    std::string getHeaderValue(std::string const& key);
+    std::string getHeaderValue(std::string const& key) const;
     std::string getHeaderStr(int index) const;
     int getNumHeaders() const;
     void clearHeaders();
@@ -124,7 +124,7 @@ public:
         return parseErrorStr;
     }
 
-    void setVersion(std::string const& v) {
+    void setVersion(std::string_view v) {
         version = v;
     }
 

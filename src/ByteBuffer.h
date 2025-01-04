@@ -20,7 +20,7 @@
 #define _BYTEBUFFER_H_
 
 // Default number of bytes to allocate in the backing buffer if no size is provided
-#define DEFAULT_SIZE 4096
+constexpr unsigned int DEFAULT_SIZE = 4096;
 
 // If defined, utility functions within the class are enabled
 #define BB_UTILITY
@@ -38,7 +38,8 @@ using byte = unsigned char;
 
 class ByteBuffer {
 private:
-    unsigned int rpos, wpos;
+    unsigned int rpos = 0;
+    unsigned int wpos = 0;
     std::vector<byte> buf;
 
 #ifdef BB_UTILITY

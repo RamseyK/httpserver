@@ -43,8 +43,8 @@
 #include "HTTPResponse.h"
 #include "ResourceHost.h"
 
-#define INVALID_SOCKET -1
-#define QUEUE_SIZE 1024
+constexpr int INVALID_SOCKET = -1;
+constexpr unsigned int QUEUE_SIZE = 1024;
 
 class HTTPServer {
     // Server Socket
@@ -67,13 +67,13 @@ class HTTPServer {
     std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
 
     // Connection processing
-    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void *udata);
+    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void* udata);
     void acceptConnection();
-    Client *getClient(int clfd);
+    Client* getClient(int clfd);
     void disconnectClient(Client* cl, bool mapErase = true);
     void readClient(Client* cl, int data_len); // Client read event
     bool writeClient(Client* cl, int avail_bytes); // Client write event
-    ResourceHost* getResourceHostForRequest(HTTPRequest* req);
+    ResourceHost* getResourceHostForRequest(const HTTPRequest* req);
 
     // Request handling
     void handleRequest(Client* cl, HTTPRequest* req);
