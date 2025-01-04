@@ -1,7 +1,7 @@
 /**
     httpserver
     HTTPServer.cpp
-    Copyright 2011-2021 Ramsey Kant
+    Copyright 2011-2025 Ramsey Kant
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,13 +28,7 @@
  * @param drop_uid UID to setuid to after bind().  Ignored if 0
  * @param drop_gid GID to setgid to after bind().  Ignored if 0
  */
-HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid, int drop_gid) {
-    canRun = false;
-    listenSocket = INVALID_SOCKET;
-    listenPort = port;
-    kqfd = -1;
-    dropUid = drop_uid;
-    dropGid = drop_gid;
+HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::string diskpath, int drop_uid, int drop_gid) : listenPort(port), listenSocket(INVALID_SOCKET), dropUid(drop_uid), dropGid(drop_gid), kqfd(-1), canRun(false) {
 
     std::cout << "Port: " << port << std::endl;
     std::cout << "Disk path: " << diskpath.c_str() << std::endl;
@@ -51,7 +45,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
     vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 
     // Setup the resource host serving htdocs to provide for the vhost aliases
-    for (std::string vh : vhost_aliases) {
+    for (auto vh : vhost_aliases) {
         if (vh.length() >= 122) {
             std::cout << "vhost " << vh << " too long, skipping!" << std::endl;
             continue;

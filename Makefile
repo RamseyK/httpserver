@@ -1,5 +1,5 @@
 # Makefile for httpserver
-# (C) Ramsey Kant 2011-2021
+# (C) Ramsey Kant 2011-2025
 
 CC := clang++
 SRCDIR := src

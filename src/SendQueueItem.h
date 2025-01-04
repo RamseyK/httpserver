@@ -1,19 +1,19 @@
 /**
-	httpserver
-	SendQueueItem.h
-	Copyright 2011-2021 Ramsey Kant
+    httpserver
+    SendQueueItem.h
+    Copyright 2011-2025 Ramsey Kant
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-	    http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #ifndef _SENDQUEUEITEM_H_
@@ -31,45 +31,41 @@ typedef unsigned char byte;
 class SendQueueItem {
 
 private:
-	byte* sendData;
-	unsigned int sendSize;
-	unsigned int sendOffset;
-	bool disconnect; // Flag indicating if the client should be disconnected after this item is dequeued
+    byte* sendData;
+    unsigned int sendSize;
+    unsigned int sendOffset;
+    bool disconnect; // Flag indicating if the client should be disconnected after this item is dequeued
 
 public:
-	SendQueueItem(byte* data, unsigned int size, bool dc) {
-		sendData = data;
-		sendSize = size;
-		disconnect = dc;
-		sendOffset = 0;
-	}
+    SendQueueItem(byte* data, unsigned int size, bool dc) : sendData(data), sendSize(size), sendOffset(0), disconnect(dc) {
+    }
 
-	~SendQueueItem() {
-		if (sendData != nullptr) {
-			delete [] sendData;
-			sendData = nullptr;
-		}
-	}
+    ~SendQueueItem() {
+        if (sendData != nullptr) {
+            delete [] sendData;
+            sendData = nullptr;
+        }
+    }
 
-	void setOffset(unsigned int off) {
-		sendOffset = off;
-	}
+    void setOffset(unsigned int off) {
+        sendOffset = off;
+    }
 
-	byte* getData() const {
-		return sendData;
-	}
+    byte* getData() const {
+        return sendData;
+    }
 
-	unsigned int getSize() const {
-		return sendSize;
-	}
+    unsigned int getSize() const {
+        return sendSize;
+    }
 
-	bool getDisconnect() const {
-		return disconnect;
-	}
+    bool getDisconnect() const {
+        return disconnect;
+    }
 
-	unsigned int getOffset() const {
-		return sendOffset;
-	}
+    unsigned int getOffset() const {
+        return sendOffset;
+    }
 
 };
 

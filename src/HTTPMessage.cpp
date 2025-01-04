@@ -1,7 +1,7 @@
 /**
     ByteBuffer
     HTTPMessage.cpp
-    Copyright 2011-2021 Ramsey Kant
+    Copyright 2011-2025 Ramsey Kant
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
     this->init();
 }
 
-HTTPMessage::HTTPMessage(std::string sData) : ByteBuffer(sData.size() + 1) {
+HTTPMessage::HTTPMessage(std::string const& sData) : ByteBuffer(sData.size() + 1) {
     putBytes((byte*)sData.c_str(), sData.size() + 1);
     this->init();
 }
@@ -243,7 +243,7 @@ bool HTTPMessage::parseBody() {
  *
  * @param string containing formatted header: value
  */
-void HTTPMessage::addHeader(std::string const line) {
+void HTTPMessage::addHeader(std::string const& line) {
     std::string key = "";
     std::string value = "";
     size_t kpos;
@@ -272,7 +272,7 @@ void HTTPMessage::addHeader(std::string const line) {
  * @param key String representation of the Header Key
  * @param value String representation of the Header value
  */
-void HTTPMessage::addHeader(std::string const key, std::string const value) {
+void HTTPMessage::addHeader(std::string const& key, std::string const& value) {
     headers->insert(std::pair<std::string, std::string>(key, value));
 }
 
@@ -283,7 +283,7 @@ void HTTPMessage::addHeader(std::string const key, std::string const value) {
  * @param key String representation of the Header Key
  * @param value Integer representation of the Header value
  */
-void HTTPMessage::addHeader(std::string const key, int value) {
+void HTTPMessage::addHeader(std::string const& key, int value) {
     std::stringstream sz;
     sz << value;
     headers->insert(std::pair<std::string, std::string>(key, sz.str()));
@@ -295,7 +295,7 @@ void HTTPMessage::addHeader(std::string const key, int value) {
  *
  * @param key Key to identify the header
  */
-std::string HTTPMessage::getHeaderValue(std::string const key) {
+std::string HTTPMessage::getHeaderValue(std::string const& key) {
 
     char c;
     std::string key_lower = "";

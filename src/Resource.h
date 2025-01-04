@@ -1,7 +1,7 @@
 /**
     httpserver
     Resource.h
-    Copyright 2011-2021 Ramsey Kant
+    Copyright 2011-2025 Ramsey Kant
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ private:
     bool directory;
 
 public:
-    Resource(std::string loc, bool dir = false);
+    Resource(std::string const& loc, bool dir = false);
     ~Resource();
 
     // Setters
@@ -43,7 +43,7 @@ public:
         size = s;
     }
 
-    void setMimeType(std::string mt) {
+    void setMimeType(std::string const& mt) {
         mimeType = mt;
     }
 

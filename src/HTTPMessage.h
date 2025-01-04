@@ -1,7 +1,7 @@
 /**
     ByteBuffer
     HTTPMessage.h
-    Copyright 2011-2021 Ramsey Kant
+    Copyright 2011-2025 Ramsey Kant
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ protected:
 
 public:
     HTTPMessage();
-    HTTPMessage(std::string sData);
+    HTTPMessage(std::string const& sData);
     HTTPMessage(byte *pData, unsigned int len);
     virtual ~HTTPMessage();
 
@@ -113,10 +113,10 @@ public:
     bool parseBody();
 
     // Header Map manipulation
-    void addHeader(std::string const line);
-    void addHeader(std::string const key, std::string const value);
-    void addHeader(std::string const key, int value);
-    std::string getHeaderValue(std::string const key);
+    void addHeader(std::string const& line);
+    void addHeader(std::string const& key, std::string const& value);
+    void addHeader(std::string const& key, int value);
+    std::string getHeaderValue(std::string const& key);
     std::string getHeaderStr(int index);
     int getNumHeaders();
     void clearHeaders();
@@ -127,7 +127,7 @@ public:
         return parseErrorStr;
     }
 
-    void setVersion(std::string v) {
+    void setVersion(std::string const& v) {
         version = v;
     }
 

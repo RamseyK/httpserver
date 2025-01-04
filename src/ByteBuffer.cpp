@@ -1,7 +1,7 @@
 /**
    ByteBuffer
    ByteBuffer.cpp
-   Copyright 2011 Ramsey Kant
+   Copyright 2011-2025 Ramsey Kant
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -323,7 +323,7 @@ void ByteBuffer::putShort(short value, unsigned int index) {
 
 // Utility Functions
 #ifdef BB_UTILITY
-void ByteBuffer::setName(std::string n) {
+void ByteBuffer::setName(std::string const& n) {
     name = n;
 }
 

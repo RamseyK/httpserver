@@ -1,7 +1,7 @@
 /**
 	httpserver
 	ResourceHost.cpp
-	Copyright 2011-2021 Ramsey Kant
+	Copyright 2011-2025 Ramsey Kant
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,11 +18,8 @@
 
 #include "ResourceHost.h"
 
-ResourceHost::ResourceHost(std::string base) {
-	baseDiskPath = base;
-
-	// Check to see if the disk base path is a valid path
-
+ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
+	// TODO: Check to see if the baseDiskPath is a valid path
 }
 
 ResourceHost::~ResourceHost() {
@@ -34,7 +31,7 @@ ResourceHost::~ResourceHost() {
  * @param ext File extension to use for the lookup
  * @return MIME type as a String. If type could not be found, returns an empty string
  */
-std::string ResourceHost::lookupMimeType(std::string ext) {
+std::string ResourceHost::lookupMimeType(std::string const& ext) {
 	std::unordered_map<std::string, std::string>::const_iterator it = mimeMap.find(ext);
 	if (it == mimeMap.end())
 		return "";
@@ -51,7 +48,7 @@ std::string ResourceHost::lookupMimeType(std::string ext) {
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::readFile(std::string path, struct stat sb) {
+Resource* ResourceHost::readFile(std::string const& path, struct stat sb) {
 	// Make sure the webserver USER owns the file
 	if (!(sb.st_mode & S_IRWXU))
 		return nullptr;
@@ -153,7 +150,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
  * @param path Full disk path of the file
  * @return HTML string representation of the directory. Blank string if invalid directory
  */
-std::string ResourceHost::generateDirList(std::string path) const {
+std::string ResourceHost::generateDirList(std::string const& path) const {
 	// Get just the relative uri from the entire path by stripping out the baseDiskPath from the beginning
 	size_t uri_pos = path.find(baseDiskPath);
 	std::string uri = "?";
@@ -198,7 +195,7 @@ std::string ResourceHost::generateDirList(std::string path) const {
  * @param uri The URI sent in the request
  * @return NULL if unable to load the resource. Resource object
  */
-Resource* ResourceHost::getResource(std::string uri) {
+Resource* ResourceHost::getResource(std::string const& uri) {
 	if (uri.length() > 255 || uri.empty())
 		return nullptr;
 

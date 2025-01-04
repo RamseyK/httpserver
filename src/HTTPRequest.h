@@ -1,7 +1,7 @@
 /**
  ByteBuffer
  HTTPRequest.h
- Copyright 2011-2021 Ramsey Kant
+ Copyright 2011-2025 Ramsey Kant
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public:
 
     // Helper functions
 
-    int methodStrToInt(std::string name);
+    int methodStrToInt(std::string const& name);
     std::string methodIntToStr(unsigned int mid);
 
     // Info getters  & setters
@@ -53,7 +53,7 @@ public:
         return method;
     }
 
-    void setRequestUri(std::string u) {
+    void setRequestUri(std::string const& u) {
         requestUri = u;
     }
 

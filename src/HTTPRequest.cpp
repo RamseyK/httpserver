@@ -1,7 +1,7 @@
 /**
  ByteBuffer
  HTTPRequest.cpp
- Copyright 2011-2021 Ramsey Kant
+ Copyright 2011-2025 Ramsey Kant
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ void HTTPRequest::init() {
  * @param name String representation of the Method
  * @return Corresponding Method ID, -1 if unable to find the method
  */
-int HTTPRequest::methodStrToInt(std::string name) {
+int HTTPRequest::methodStrToInt(std::string const& name) {
     // Method name cannot must be between 1 and 10 characters. Anything outside those bounds shouldn't be compared at all
     if (name.empty() || (name.size() >= 10))
         return -1;

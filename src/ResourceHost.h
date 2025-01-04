@@ -1,7 +1,7 @@
 /**
 	httpserver
 	ResourceHost.h
-	Copyright 2011-2021 Ramsey Kant
+	Copyright 2011-2025 Ramsey Kant
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -51,26 +51,26 @@ private:
 
 private:
 	// Returns a MIME type string given an extension
-	std::string lookupMimeType(std::string ext);
+	std::string lookupMimeType(std::string const& ext);
 
 	// Read a file from the FS and into a Resource object
-	Resource* readFile(std::string path, struct stat sb);
+	Resource* readFile(std::string const& path, struct stat sb);
 
 	// Reads a directory list or index from FS into a Resource object
 	Resource* readDirectory(std::string path, struct stat sb);
 
 	// Provide a string rep of the directory listing based on URI
-	std::string generateDirList(std::string dirPath) const;
+	std::string generateDirList(std::string const& dirPath) const;
 
 public:
-	ResourceHost(std::string base);
+	ResourceHost(std::string const& base);
 	~ResourceHost();
 
 	// Write a resource to the file system
 	void putResource(Resource* res, bool writeToDisk);
 
 	// Returns a Resource based on URI
-	Resource* getResource(std::string uri);
+	Resource* getResource(std::string const& uri);
 };
 
 #endif
