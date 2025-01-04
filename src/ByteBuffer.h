@@ -77,8 +77,8 @@ private:
     }
 
 public:
-    ByteBuffer(unsigned int size = DEFAULT_SIZE);
-    ByteBuffer(const byte* arr, unsigned int size);
+    explicit ByteBuffer(unsigned int size = DEFAULT_SIZE);
+    explicit ByteBuffer(const byte* arr, unsigned int size);
     virtual ~ByteBuffer();
 
     unsigned int bytesRemaining() const; // Number of bytes from the current read position till the end of the buffer

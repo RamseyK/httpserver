@@ -63,7 +63,7 @@ int main()
     cfile.close();
 
     // Validate at least vhost, port, and diskpath are present
-    if (!config.contains("vhost") || !config.contains("port") || !config.contains("port")) {
+    if (!config.contains("vhost") || !config.contains("port") || !config.contains("diskpath")) {
         std::cout << "vhost, port, and diskpath must be supplied in the config, at a minimum" << std::endl;
         return -1;
     }

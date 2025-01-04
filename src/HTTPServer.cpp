@@ -662,7 +662,7 @@ ResourceHost* HTTPServer::getResourceHostForRequest(HTTPRequest* req) {
 
         // All vhosts have the port appended, so need to append it to the host if it doesnt exist
         if (!host.contains(":")) {
-            host.append(":" + std::to_string(listenPort));
+            host.append(std::format(":{}", listenPort));
         }
 
         std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);

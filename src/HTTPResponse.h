@@ -21,7 +21,7 @@
 
 #include "HTTPMessage.h"
 
-class HTTPResponse : public HTTPMessage {
+class HTTPResponse final : public HTTPMessage {
 private:
     // Response variables
     int status = 0;
@@ -33,7 +33,7 @@ private:
 public:
     HTTPResponse();
     explicit HTTPResponse(std::string const& sData);
-    explicit HTTPResponse(byte *pData, unsigned int len);
+    explicit HTTPResponse(const byte *pData, unsigned int len);
     ~HTTPResponse() = default;
 
     byte* create() final;

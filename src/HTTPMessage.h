@@ -93,7 +93,7 @@ protected:
 public:
     HTTPMessage();
     explicit HTTPMessage(std::string const& sData);
-    explicit HTTPMessage(byte *pData, unsigned int len);
+    explicit HTTPMessage(const byte *pData, unsigned int len);
     virtual ~HTTPMessage() = default;
 
     virtual byte* create() = 0;
@@ -124,7 +124,7 @@ public:
         return parseErrorStr;
     }
 
-    void setVersion(std::string v) {
+    void setVersion(std::string const& v) {
         version = v;
     }
 

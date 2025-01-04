@@ -25,7 +25,7 @@ HTTPResponse::HTTPResponse() : HTTPMessage() {
 HTTPResponse::HTTPResponse(std::string const& sData) : HTTPMessage(sData) {
 }
 
-HTTPResponse::HTTPResponse(byte* pData, unsigned int len) : HTTPMessage(pData, len) {
+HTTPResponse::HTTPResponse(const byte* pData, unsigned int len) : HTTPMessage(pData, len) {
 }
 
 /**

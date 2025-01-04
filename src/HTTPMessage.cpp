@@ -25,7 +25,7 @@ HTTPMessage::HTTPMessage(std::string const& sData) : ByteBuffer(sData.size() + 1
     putBytes((byte*)sData.c_str(), sData.size() + 1);
 }
 
-HTTPMessage::HTTPMessage(byte* pData, unsigned int len) : ByteBuffer(pData, len) {
+HTTPMessage::HTTPMessage(const byte* pData, unsigned int len) : ByteBuffer(pData, len) {
 }
 
 /**

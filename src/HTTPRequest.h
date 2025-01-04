@@ -21,7 +21,7 @@
 
 #include "HTTPMessage.h"
 
-class HTTPRequest : public HTTPMessage {
+class HTTPRequest final : public HTTPMessage {
 private:
     int method = 0;
     std::string requestUri = "";
@@ -29,7 +29,7 @@ private:
 public:
     HTTPRequest();
     explicit HTTPRequest(std::string const& sData);
-    explicit HTTPRequest(byte *pData, unsigned int len);
+    explicit HTTPRequest(const byte *pData, unsigned int len);
     ~HTTPRequest() = default;
 
     virtual byte *create();

@@ -25,7 +25,7 @@ HTTPRequest::HTTPRequest() : HTTPMessage() {
 HTTPRequest::HTTPRequest(std::string const& sData) : HTTPMessage(sData) {
 }
 
-HTTPRequest::HTTPRequest(byte* pData, unsigned int len) : HTTPMessage(pData, len) {
+HTTPRequest::HTTPRequest(const byte* pData, unsigned int len) : HTTPMessage(pData, len) {
 }
 
 /**
