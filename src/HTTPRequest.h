@@ -28,17 +28,17 @@ private:
 
 public:
     HTTPRequest();
-    HTTPRequest(std::string const& sData);
-    HTTPRequest(byte *pData, unsigned int len);
-    virtual ~HTTPRequest();
+    explicit HTTPRequest(std::string const& sData);
+    explicit HTTPRequest(byte *pData, unsigned int len);
+    ~HTTPRequest() = default;
 
     virtual byte *create();
     virtual bool parse();
 
     // Helper functions
 
-    int methodStrToInt(std::string_view name);
-    std::string methodIntToStr(unsigned int mid);
+    int methodStrToInt(std::string_view name) const;
+    std::string methodIntToStr(unsigned int mid) const;
 
     // Info getters  & setters
 

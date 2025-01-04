@@ -32,12 +32,12 @@ private:
 
 public:
     HTTPResponse();
-    HTTPResponse(std::string const& sData);
-    HTTPResponse(byte *pData, unsigned int len);
-    virtual ~HTTPResponse();
+    explicit HTTPResponse(std::string const& sData);
+    explicit HTTPResponse(byte *pData, unsigned int len);
+    ~HTTPResponse() = default;
 
-    virtual byte* create();
-    virtual bool parse();
+    byte* create() final;
+    bool parse() final;
 
     // Accessors & Mutators
 

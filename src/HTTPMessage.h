@@ -26,10 +26,10 @@
 #include "ByteBuffer.h"
 
 // Constants
-#define HTTP_VERSION_10 "HTTP/1.0"
-#define HTTP_VERSION_11 "HTTP/1.1"
-#define DEFAULT_HTTP_VERSION HTTP_VERSION_11
-#define NUM_METHODS 9
+constexpr std::string HTTP_VERSION_10 = "HTTP/1.0";
+constexpr std::string HTTP_VERSION_11 = "HTTP/1.1";
+constexpr std::string DEFAULT_HTTP_VERSION = HTTP_VERSION_11;
+constexpr int NUM_METHODS = 9;
 
 // HTTP Methods (Requests)
 
@@ -92,9 +92,9 @@ protected:
 
 public:
     HTTPMessage();
-    HTTPMessage(std::string const& sData);
-    HTTPMessage(byte *pData, unsigned int len);
-    virtual ~HTTPMessage();
+    explicit HTTPMessage(std::string const& sData);
+    explicit HTTPMessage(byte *pData, unsigned int len);
+    virtual ~HTTPMessage() = default;
 
     virtual byte* create() = 0;
     virtual bool parse() = 0;
@@ -115,7 +115,7 @@ public:
     void addHeader(std::string const& key, int value);
     std::string getHeaderValue(std::string const& key);
     std::string getHeaderStr(int index) const;
-    int getNumHeaders();
+    int getNumHeaders() const;
     void clearHeaders();
 
     // Getters & Setters
@@ -124,7 +124,7 @@ public:
         return parseErrorStr;
     }
 
-    void setVersion(std::string_view v) {
+    void setVersion(std::string v) {
         version = v;
     }
 

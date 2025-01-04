@@ -665,7 +665,7 @@ ResourceHost* HTTPServer::getResourceHostForRequest(HTTPRequest* req) {
         host = req->getHeaderValue("Host");
 
         // All vhosts have the port appended, so need to append it to the host if it doesnt exist
-        if (host.find(":") == std::string::npos) {
+        if (!host.contains(":")) {
             host.append(":" + std::to_string(listenPort));
         }
 

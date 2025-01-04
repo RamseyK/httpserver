@@ -28,9 +28,6 @@ HTTPMessage::HTTPMessage(std::string const& sData) : ByteBuffer(sData.size() + 1
 HTTPMessage::HTTPMessage(byte* pData, unsigned int len) : ByteBuffer(pData, len) {
 }
 
-HTTPMessage::~HTTPMessage() {
-}
-
 /**
  * Put Line
  * Append a line (string) to the backing ByteBuffer at the current position
@@ -256,7 +253,7 @@ void HTTPMessage::addHeader(std::string const& line) {
  * @param value String representation of the Header value
  */
 void HTTPMessage::addHeader(std::string const& key, std::string const& value) {
-    headers.insert(std::pair<std::string, std::string>(key, value));
+    headers.try_emplace(key, value);
 }
 
 /**
@@ -269,7 +266,7 @@ void HTTPMessage::addHeader(std::string const& key, std::string const& value) {
 void HTTPMessage::addHeader(std::string const& key, int value) {
     std::stringstream sz;
     sz << value;
-    headers.insert(std::pair<std::string, std::string>(key, sz.str()));
+    headers.try_emplace(key, sz.str());
 }
 
 /**
@@ -331,7 +328,7 @@ std::string HTTPMessage::getHeaderStr(int index) const {
  *
  * @return size of the map
  */
-int HTTPMessage::getNumHeaders() {
+int HTTPMessage::getNumHeaders() const {
     return headers.size();
 }
 

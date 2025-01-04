@@ -28,9 +28,6 @@ HTTPRequest::HTTPRequest(std::string const& sData) : HTTPMessage(sData) {
 HTTPRequest::HTTPRequest(byte* pData, unsigned int len) : HTTPMessage(pData, len) {
 }
 
-HTTPRequest::~HTTPRequest() {
-}
-
 /**
  * Takes the method name and converts it to the corresponding method
  * id detailed in the Method enum
@@ -38,7 +35,7 @@ HTTPRequest::~HTTPRequest() {
  * @param name String representation of the Method
  * @return Corresponding Method ID, -1 if unable to find the method
  */
-int HTTPRequest::methodStrToInt(std::string_view name) {
+int HTTPRequest::methodStrToInt(std::string_view name) const {
     // Method name cannot must be between 1 and 10 characters. Anything outside those bounds shouldn't be compared at all
     if (name.empty() || (name.size() >= 10))
         return -1;
@@ -59,7 +56,7 @@ int HTTPRequest::methodStrToInt(std::string_view name) {
  * @param mid Method ID to lookup
  * @return The method name in the from of a std::string. Blank if unable to find the method
  */
-std::string HTTPRequest::methodIntToStr(unsigned int mid) {
+std::string HTTPRequest::methodIntToStr(unsigned int mid) const {
     // ID is out of bounds of the possible requestMethodStr indexes
     if (mid >= NUM_METHODS)
         return "";
@@ -110,7 +107,8 @@ byte* HTTPRequest::create() {
  * @param True if successful. If false, sets parseErrorStr for reason of failure
  */
 bool HTTPRequest::parse() {
-    std::string initial = "", methodName = "";
+    std::string initial = "";
+    std::string methodName = "";
 
     // Get elements from the initial line: <method> <path> <version>\r\n
     methodName = getStrElement();

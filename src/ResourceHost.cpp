@@ -200,7 +200,7 @@ Resource* ResourceHost::getResource(std::string const& uri) {
 		return nullptr;
 
 	// Do not allow directory traversal
-	if (uri.find("../") != std::string::npos || uri.find("/..") != std::string::npos)
+	if (uri.contains("../") || uri.contains("/.."))
 		return nullptr;
 
 	std::string path = baseDiskPath + uri;

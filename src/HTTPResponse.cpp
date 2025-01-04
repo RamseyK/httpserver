@@ -28,26 +28,23 @@ HTTPResponse::HTTPResponse(std::string const& sData) : HTTPMessage(sData) {
 HTTPResponse::HTTPResponse(byte* pData, unsigned int len) : HTTPMessage(pData, len) {
 }
 
-HTTPResponse::~HTTPResponse() {
-}
-
 /**
  * Determine the status code based on the parsed Responses reason string
  * The reason string is non standard so this method needs to change in order to handle
  * responses with different kinds of strings
 */
 void HTTPResponse::determineStatusCode() {
-    if (reason.find("Continue") != std::string::npos) {
+    if (reason.contains("Continue")) {
         status = Status(CONTINUE);
-    } else if (reason.find("OK") != std::string::npos) {
+    } else if (reason.contains("OK")) {
         status = Status(OK);
-    } else if (reason.find("Bad Request") != std::string::npos) {
+    } else if (reason.contains("Bad Request")) {
         status = Status(BAD_REQUEST);
-    } else if (reason.find("Not Found") != std::string::npos) {
+    } else if (reason.contains("Not Found")) {
         status = Status(NOT_FOUND);
-    } else if (reason.find("Server Error") != std::string::npos) {
+    } else if (reason.contains("Server Error")) {
         status = Status(SERVER_ERROR);
-    } else if (reason.find("Not Implemented") != std::string::npos) {
+    } else if (reason.contains("Not Implemented")) {
         status = Status(NOT_IMPLEMENTED);
     } else {
         status = Status(NOT_IMPLEMENTED);
