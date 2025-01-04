@@ -20,7 +20,6 @@ LDFLAGS += -flto=auto
 ifeq ($(DEBUG), 1)
 CXXFLAGS += -Og -g -ggdb3 -DDEBUG=1 \
 			-fasynchronous-unwind-tables \
-			-D_GLIBCXX_ASSERTIONS \
 			-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG \
 			-fstack-protector-all
 else
@@ -44,4 +43,7 @@ clean:
 debug:
 	$(MAKE) DEBUG=1 all
 
-.PHONY: all make-src clean debug
+asan:
+	CXXFLAGS="-fsanitize=address,undefined" make debug
+
+.PHONY: all make-src clean debug asan
