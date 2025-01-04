@@ -82,11 +82,11 @@ public:
     ByteBuffer(byte* arr, unsigned int size);
     virtual ~ByteBuffer();
 
-    unsigned int bytesRemaining(); // Number of bytes from the current read position till the end of the buffer
+    unsigned int bytesRemaining() const; // Number of bytes from the current read position till the end of the buffer
     void clear(); // Clear our the vector and reset read and write positions
     ByteBuffer* clone(); // Return a new instance of a bytebuffer with the exact same contents and the same state (rpos, wpos)
     //ByteBuffer compact(); // TODO?
-    bool equals(ByteBuffer* other) const; // Compare if the contents are equivalent
+    bool equals(const ByteBuffer* other) const; // Compare if the contents are equivalent
     void resize(unsigned int newSize);
     unsigned int size() const; // Size of internal vector
     
@@ -117,7 +117,7 @@ public:
     byte peek(); // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
     byte get(); // Relative get method. Reads the byte at the buffers current position then increments the position
     byte get(unsigned int index) const; // Absolute get method. Read byte at index
-    void getBytes(byte* buf, unsigned int len); // Absolute read into array buf of length len
+    void getBytes(byte* out_buf, unsigned int out_len); // Absolute read into array buf of length len
     char getChar(); // Relative
     char getChar(unsigned int index); // Absolute
     double getDouble();
@@ -171,7 +171,7 @@ public:
 
     // Utility Functions
 #ifdef BB_UTILITY
-    void setName(std::string const& n);
+    void setName(std::string_view n);
     std::string getName() const;
     void printInfo() const;
     void printAH() const;

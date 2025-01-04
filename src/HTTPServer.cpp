@@ -45,7 +45,7 @@ HTTPServer::HTTPServer(std::vector<std::string> vhost_aliases, int port, std::st
     vhosts.insert(std::pair<std::string, ResourceHost*>(std::string(tmpstr).c_str(), resHost));
 
     // Setup the resource host serving htdocs to provide for the vhost aliases
-    for (auto vh : vhost_aliases) {
+    for (auto const& vh : vhost_aliases) {
         if (vh.length() >= 122) {
             std::cout << "vhost " << vh << " too long, skipping!" << std::endl;
             continue;
@@ -593,7 +593,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest *req) {
  */
 void HTTPServer::sendStatusResponse(Client* cl, int status, std::string msg) {
     auto resp = new HTTPResponse();
-    resp->setStatus(Status(status));
+    resp->setStatus(status);
 
     // Body message: Reason string + additional msg
     std::string body = resp->getReason();
@@ -676,7 +676,7 @@ ResourceHost* HTTPServer::getResourceHostForRequest(HTTPRequest* req) {
     } else {
         // Temporary: HTTP/1.0 are given the first ResouceHost in the hostList
         // TODO: Allow admin to specify a 'default resource host'
-        if (hostList.size() > 0)
+        if (!hostList.empty())
             resHost = hostList[0];
     }
     

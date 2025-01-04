@@ -69,10 +69,9 @@ void HTTPMessage::putLine(std::string str, bool crlf_end) {
  * 'Header: value'
  */
 void HTTPMessage::putHeaders() {
-    std::map<std::string, std::string>::const_iterator it;
-    for (it = headers->begin(); it != headers->end(); it++) {
-        std::string final = it->first + ": " + it->second;
-        putLine(final, true);
+    for (auto const& pair : *headers) {
+        std::string hdrstr = pair.first + ": " + pair.second;
+        putLine(hdrstr, true);
     }
 
     // End with a blank line
@@ -330,10 +329,9 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) {
 std::string HTTPMessage::getHeaderStr(int index) {
     int i = 0;
     std::string ret = "";
-    std::map<std::string, std::string>::const_iterator it;
-    for (it = headers->begin(); it != headers->end(); it++) {
+    for (auto const& pair : *headers) {
         if (i == index) {
-            ret = it->first + ": " + it->second;
+            ret = pair.first + ": " + pair.second;
             break;
         }
 

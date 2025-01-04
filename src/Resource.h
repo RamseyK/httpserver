@@ -26,9 +26,9 @@ typedef unsigned char byte;
 class Resource {
 
 private:
-    byte* data; // File data
-    unsigned int size;
-    std::string mimeType;
+    byte* data = nullptr; // File data
+    unsigned int size = 0;
+    std::string mimeType = "";
     std::string location; // Disk path location within the server
     bool directory;
 

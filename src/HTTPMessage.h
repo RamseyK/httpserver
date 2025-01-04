@@ -127,7 +127,7 @@ public:
         return parseErrorStr;
     }
 
-    void setVersion(std::string const& v) {
+    void setVersion(std::string_view v) {
         version = v;
     }
 

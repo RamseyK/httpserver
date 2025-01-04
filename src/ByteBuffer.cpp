@@ -68,7 +68,7 @@ ByteBuffer::~ByteBuffer() {
  *
  * @return Number of bytes from rpos to the end (size())
  */
-unsigned int ByteBuffer::bytesRemaining() {
+unsigned int ByteBuffer::bytesRemaining() const {
     return size()-rpos;
 }
 
@@ -93,7 +93,7 @@ ByteBuffer* ByteBuffer::clone() {
 
     // Copy data
     for(unsigned int i = 0; i < buf.size(); i++) {
-        ret->put((byte)get(i));
+        ret->put(get(i));
     }
 
     // Reset positions
@@ -110,7 +110,7 @@ ByteBuffer* ByteBuffer::clone() {
  * @param other A pointer to a ByteBuffer to compare to this one
  * @return True if the internal buffers match. False if otherwise
  */
-bool ByteBuffer::equals(ByteBuffer* other) const {
+bool ByteBuffer::equals(const ByteBuffer* other) const {
     // If sizes aren't equal, they can't be equal
     if(size() != other->size())
         return false;
@@ -118,7 +118,7 @@ bool ByteBuffer::equals(ByteBuffer* other) const {
     // Compare byte by byte
     unsigned int len = size();
     for(unsigned int i = 0; i < len; i++) {
-        if((byte)get(i) != (byte)other->get(i))
+        if(get(i) != other->get(i))
             return false;
     }
 
@@ -189,9 +189,9 @@ byte ByteBuffer::get(unsigned int index) const {
     return read<byte>(index);
 }
 
-void ByteBuffer::getBytes(byte* buf, unsigned int len) {
-    for(unsigned int i = 0; i < len; i++) {
-        buf[i] = read<byte>();
+void ByteBuffer::getBytes(byte* out_buf, unsigned int out_len) {
+    for(unsigned int i = 0; i < out_len; i++) {
+        out_buf[i] = read<byte>();
     }
 }
 
@@ -323,7 +323,7 @@ void ByteBuffer::putShort(short value, unsigned int index) {
 
 // Utility Functions
 #ifdef BB_UTILITY
-void ByteBuffer::setName(std::string const& n) {
+void ByteBuffer::setName(std::string_view n) {
     name = n;
 }
 

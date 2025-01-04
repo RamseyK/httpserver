@@ -48,7 +48,7 @@ std::string ResourceHost::lookupMimeType(std::string const& ext) {
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::readFile(std::string const& path, struct stat sb) {
+Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb) {
 	// Make sure the webserver USER owns the file
 	if (!(sb.st_mode & S_IRWXU))
 		return nullptr;
@@ -108,16 +108,16 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat sb) {
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::readDirectory(std::string path, struct stat sb) {
+Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
 	Resource* res = nullptr;
 	// Make the path end with a / (for consistency) if it doesnt already
 	if (path.empty() || path[path.length() - 1] != '/')
 		path += "/";
 
 	// Probe for valid indexes
-	int numIndexes = sizeof(validIndexes) / sizeof(*validIndexes);
+	int numIndexes = std::size(validIndexes);
 	std::string loadIndex;
-	struct stat sidx;
+	struct stat sidx = {0};
 	for (int i = 0; i < numIndexes; i++) {
 		loadIndex = path + validIndexes[i];
 		// Found a suitable index file to load and return to the client
@@ -207,7 +207,7 @@ Resource* ResourceHost::getResource(std::string const& uri) {
 	Resource* res = nullptr;
 
 	// Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
-	struct stat sb;
+	struct stat sb = {0};
 	if (stat(path.c_str(), &sb) == -1)
 		return nullptr; // File not found
 

@@ -18,7 +18,7 @@
 
 #include "Resource.h"
 
-Resource::Resource(std::string const& loc, bool dir) : data(nullptr), size(0), mimeType(""), location(loc), directory(dir) {
+Resource::Resource(std::string const& loc, bool dir) : location(loc), directory(dir) {
 }
 
 Resource::~Resource() {

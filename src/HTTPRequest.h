@@ -53,7 +53,7 @@ public:
         return method;
     }
 
-    void setRequestUri(std::string const& u) {
+    void setRequestUri(std::string_view u) {
         requestUri = u;
     }
 
