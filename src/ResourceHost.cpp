@@ -113,10 +113,10 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
         path += "/";
 
     // Probe for valid indexes
-    int32_t numIndexes = std::size(validIndexes);
+    uint32_t numIndexes = std::size(validIndexes);
     std::string loadIndex;
     struct stat sidx = {0};
-    for (int i = 0; i < numIndexes; i++) {
+    for (uint32_t i = 0; i < numIndexes; i++) {
         loadIndex = path + validIndexes[i];
         // Found a suitable index file to load and return to the client
         if (stat(loadIndex.c_str(), &sidx) != -1)

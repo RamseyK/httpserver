@@ -203,7 +203,8 @@ bool HTTPMessage::parseBody() {
     }
 
     // Create a big enough buffer to store the data
-    uint32_t dIdx = 0, s = size();
+    uint32_t dIdx = 0;
+    uint32_t s = size();
     data = new uint8_t[dataLen];
 
     // Grab all the bytes from the current position to the end
@@ -212,7 +213,7 @@ bool HTTPMessage::parseBody() {
         dIdx++;
     }
 
-    // TODO: Handle chuncked Request/Response parsing (with footers) here
+    // We could handle chuncked Request/Response parsing (with footers) here, but, we won't.
 
     return true;
 }
@@ -286,7 +287,7 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) const {
     // Key wasn't found, try an all lowercase variant as some clients won't always use proper capitalization
     if (it == headers.end()) {
 
-        for (int i = 0; i < key.length(); i++) {
+        for (uint32_t i = 0; i < key.length(); i++) {
             c = key.at(i);
             key_lower += tolower(c);
         }

@@ -33,7 +33,7 @@
 #include "Resource.h"
 
 // Valid files to serve as an index of a directory
-const static char* const validIndexes[] = {
+const std::vector<std::string> validIndexes = {
 	"index.html",
 	"index.htm"
 };

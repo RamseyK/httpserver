@@ -31,7 +31,7 @@
 HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t port, std::string const& diskpath, int32_t drop_uid, int32_t drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
 
     std::cout << "Port: " << port << std::endl;
-    std::cout << "Disk path: " << diskpath.c_str() << std::endl;
+    std::cout << "Disk path: " << diskpath << std::endl;
 
     // Create a resource host serving the base path ./htdocs on disk
     auto resHost = new ResourceHost(diskpath);
@@ -454,7 +454,7 @@ void HTTPServer::handleRequest(Client* cl, HTTPRequest* req) {
 
     std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " " << req->getRequestUri() << std::endl;
     /*std::cout << "Headers:" << std::endl;
-    for(int i = 0; i < req->getNumHeaders(); i++) {
+    for (uint32_t i = 0; i < req->getNumHeaders(); i++) {
         std::cout << "\t" << req->getHeaderStr(i) << std::endl;
     }
     std::cout << std::endl;*/
