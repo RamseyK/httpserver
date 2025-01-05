@@ -28,7 +28,7 @@
  * @param drop_uid UID to setuid to after bind().  Ignored if 0
  * @param drop_gid GID to setgid to after bind().  Ignored if 0
  */
-HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int port, std::string const& diskpath, int drop_uid, int drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
+HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t port, std::string const& diskpath, int32_t drop_uid, int32_t drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
 
     std::cout << "Port: " << port << std::endl;
     std::cout << "Disk path: " << diskpath.c_str() << std::endl;
@@ -173,7 +173,7 @@ void HTTPServer::stop() {
  * Update the kqueue by creating the appropriate kevent structure
  * See kqueue documentation for parameter descriptions
  */
-void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void* udata) {
+void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata) {
     struct kevent kev;
     EV_SET(&kev, ident, filter, flags, fflags, data, udata);
     kevent(kqfd, &kev, 1, NULL, 0, NULL);
@@ -185,7 +185,7 @@ void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflag
  * the listening socket
  */
 void HTTPServer::process() {
-    int nev = 0; // Number of changed events returned by kevent
+    int32_t nev = 0; // Number of changed events returned by kevent
     Client* cl = nullptr;
 
     while (canRun) {
@@ -200,7 +200,7 @@ void HTTPServer::process() {
         for (int i = 0; i < nev; i++) {
 
             // A client is waiting to connect
-            if (evList[i].ident == (unsigned int)listenSocket) {
+            if (evList[i].ident == (uint32_t)listenSocket) {
                 acceptConnection();
                 continue;
             }
@@ -255,8 +255,8 @@ void HTTPServer::process() {
 void HTTPServer::acceptConnection() {
     // Setup new client with prelim address info
     sockaddr_in clientAddr;
-    int clientAddrLen = sizeof(clientAddr);
-    int clfd = INVALID_SOCKET;
+    int32_t clientAddrLen = sizeof(clientAddr);
+    int32_t clfd = INVALID_SOCKET;
 
     // Accept the pending connection and retrive the client descriptor
     clfd = accept(listenSocket, (sockaddr*)&clientAddr, (socklen_t*)&clientAddrLen);
@@ -335,7 +335,7 @@ void HTTPServer::disconnectClient(Client* cl, bool mapErase) {
  * @param cl Pointer to Client that sent the data
  * @param data_len Number of bytes waiting to be read
  */
-void HTTPServer::readClient(Client* cl, int data_len) {
+void HTTPServer::readClient(Client* cl, int32_t data_len) {
     if (cl == nullptr)
         return;
 
@@ -349,7 +349,7 @@ void HTTPServer::readClient(Client* cl, int data_len) {
     memset(pData, 0x00, data_len);
 
     // Receive data on the wire into pData
-    int flags = 0;
+    int32_t flags = 0;
     ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
 
     // Determine state of the client socket and act on it
@@ -378,12 +378,12 @@ void HTTPServer::readClient(Client* cl, int data_len) {
  * @param cl Pointer to Client that sent the data
  * @param avail_bytes Number of bytes available for writing in the send buffer
  */
-bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
+bool HTTPServer::writeClient(Client* cl, int32_t avail_bytes) {
     if (cl == nullptr)
         return false;
 
-    int actual_sent = 0; // Actual number of bytes sent as returned by send()
-    int attempt_sent = 0; // Bytes that we're attempting to send now
+    int32_t actual_sent = 0; // Actual number of bytes sent as returned by send()
+    int32_t attempt_sent = 0; // Bytes that we're attempting to send now
 
     // The amount of available bytes to write, reported by the OS, cant really be trusted...
     if (avail_bytes > 1400) {
@@ -399,10 +399,10 @@ bool HTTPServer::writeClient(Client* cl, int avail_bytes) {
     if (item == nullptr)
         return false;
 
-    const byte* pData = item->getData();
+    const uint8_t* pData = item->getData();
 
     // Size of data left to send for the item
-    int remaining = item->getSize() - item->getOffset();
+    int32_t remaining = item->getSize() - item->getOffset();
     bool disconnect = item->getDisconnect();
 
     if (avail_bytes >= remaining) {
@@ -562,7 +562,7 @@ void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
  */
 void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
     // Get a byte array representation of the request
-    unsigned int len = req->size();
+    uint32_t len = req->size();
     auto buf = new byte[len];
     memset(buf, 0x00, len);
     req->setReadPos(0); // Set the read position at the beginning since the request has already been read to the end
@@ -589,7 +589,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
  * @param status Status code corresponding to the enum in HTTPMessage.h
  * @param msg An additional message to append to the body text
  */
-void HTTPServer::sendStatusResponse(Client* cl, int status, std::string const& msg) {
+void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string const& msg) {
     auto resp = new HTTPResponse();
     resp->setStatus(status);
 
@@ -598,7 +598,7 @@ void HTTPServer::sendStatusResponse(Client* cl, int status, std::string const& m
     if (msg.length() > 0)
         body +=  ": " + msg;
 
-    unsigned int slen = body.length();
+    uint32_t slen = body.length();
     auto sdata = new char[slen];
     memset(sdata, 0x00, slen);
     strncpy(sdata, body.c_str(), slen);
@@ -641,7 +641,7 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
         resp->addHeader("Connection", "close");
 
     // Get raw data by creating the response (we are responsible for cleaning it up in process())
-    byte* pData = resp->create();
+    uint8_t* pData = resp->create();
 
     // Add data to the Client's send queue
     cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));

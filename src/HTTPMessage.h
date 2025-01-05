@@ -1,5 +1,5 @@
 /**
-    ByteBuffer
+    httpserver
     HTTPMessage.h
     Copyright 2011-2025 Ramsey Kant
 
@@ -29,7 +29,7 @@
 constexpr std::string HTTP_VERSION_10 = "HTTP/1.0";
 constexpr std::string HTTP_VERSION_11 = "HTTP/1.1";
 constexpr std::string DEFAULT_HTTP_VERSION = HTTP_VERSION_11;
-constexpr int NUM_METHODS = 9;
+constexpr int32_t NUM_METHODS = 9;
 
 // HTTP Methods (Requests)
 
@@ -87,16 +87,16 @@ protected:
     std::string version = DEFAULT_HTTP_VERSION; // By default, all create() will indicate the version is whatever DEFAULT_HTTP_VERSION is
 
     // Message Body Data (Resource in the case of a response, extra parameters in the case of a request)
-    byte* data = nullptr;
-    unsigned int dataLen = 0;
+    uint8_t* data = nullptr;
+    uint32_t dataLen = 0;
 
 public:
     HTTPMessage();
     explicit HTTPMessage(std::string const& sData);
-    explicit HTTPMessage(const byte* pData, unsigned int len);
+    explicit HTTPMessage(const uint8_t* pData, uint32_t len);
     ~HTTPMessage() override = default;
 
-    virtual byte* create() = 0;
+    virtual uint8_t* create() = 0;
     virtual bool parse() = 0;
 
     // Create helpers
@@ -112,10 +112,10 @@ public:
     // Header Map manipulation
     void addHeader(std::string const& line);
     void addHeader(std::string const& key, std::string const& value);
-    void addHeader(std::string const& key, int value);
+    void addHeader(std::string const& key, int32_t value);
     std::string getHeaderValue(std::string const& key) const;
-    std::string getHeaderStr(int index) const;
-    int getNumHeaders() const;
+    std::string getHeaderStr(int32_t index) const;
+    uint32_t getNumHeaders() const;
     void clearHeaders();
 
     // Getters & Setters
@@ -132,16 +132,16 @@ public:
         return version;
     }
 
-    void setData(byte* d, unsigned int len) {
+    void setData(uint8_t* d, uint32_t len) {
         data = d;
         dataLen = len;
     }
 
-    byte* getData() {
+    uint8_t* getData() {
         return data;
     }
 
-    unsigned int getDataLength() const {
+    uint32_t getDataLength() const {
         return dataLen;
     }
 };

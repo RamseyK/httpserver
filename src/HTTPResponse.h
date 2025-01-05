@@ -1,5 +1,5 @@
 /**
- ByteBuffer
+ httpserver
  HTTPResponse.h
  Copyright 2011-2025 Ramsey Kant
 
@@ -24,7 +24,7 @@
 class HTTPResponse final : public HTTPMessage {
 private:
     // Response variables
-    int status = 0;
+    int32_t status = 0;
     std::string reason = "";
 
     void determineReasonStr();
@@ -33,15 +33,14 @@ private:
 public:
     HTTPResponse();
     explicit HTTPResponse(std::string const& sData);
-    explicit HTTPResponse(const byte* pData, unsigned int len);
+    explicit HTTPResponse(const uint8_t* pData, uint32_t len);
     ~HTTPResponse() override = default;
 
-    byte* create() override;
+    uint8_t* create() override;
     bool parse() override;
 
     // Accessors & Mutators
-
-    void setStatus (int scode) {
+    void setStatus (int32_t scode) {
         status = scode;
         determineReasonStr();
     }

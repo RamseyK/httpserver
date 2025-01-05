@@ -1,20 +1,22 @@
 /**
-   ByteBuffer
-   ByteBuffer.h
-   Copyright 2011-2025 Ramsey Kant
+ ByteBuffer
+ ByteBuffer.h
+ Copyright 2011-2015 Ramsey Kant
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ Modified 2015 by Ashley Davis (SgtCoDFish)
+ */
 
 #ifndef _BYTEBUFFER_H_
 #define _BYTEBUFFER_H_
@@ -23,149 +25,113 @@
 #define BB_UTILITY
 
 #include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <vector>
+#include <memory>
 
 #ifdef BB_UTILITY
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 #endif
-
-using byte = unsigned char;
 
 // Default number of bytes to allocate in the backing buffer if no size is provided
-constexpr unsigned int DEFAULT_SIZE = 4096;
+constexpr uint32_t BB_DEFAULT_SIZE = 4096;
 
-class ByteBuffer {
-private:
-    unsigned int rpos = 0;
-    unsigned int wpos = 0;
-    std::vector<byte> buf;
-
-#ifdef BB_UTILITY
-    std::string name = "";
+#ifdef BB_USE_NS
+namespace bb {
 #endif
 
-    template <typename T> T read() {
-        T data = read<T>(rpos);
-        rpos += sizeof(T);
-        return data;
-    }
-    
-    template <typename T> T read(unsigned int index) const {
-        if(index + sizeof(T) <= buf.size())
-            return *((T*)&buf[index]);
-        return 0;
-    }
-
-    template <typename T> void append(T data) {
-        unsigned int s = sizeof(data);
-
-        if (size() < (wpos + s))
-            buf.resize(wpos + s);
-        memcpy(&buf[wpos], (byte*)&data, s);
-
-        wpos += s;
-    }
-    
-    template <typename T> void insert(T data, unsigned int index) {
-        if ((index + sizeof(data)) > size()) {
-            buf.resize(size() + (index + sizeof(data)));
-        }
-
-        memcpy(&buf[index], (byte*)&data, sizeof(data));
-        wpos = index+sizeof(data);
-    }
-
+class ByteBuffer {
 public:
-    explicit ByteBuffer(unsigned int size = DEFAULT_SIZE);
-    explicit ByteBuffer(const byte* arr, unsigned int size);
+    explicit ByteBuffer(uint32_t size = BB_DEFAULT_SIZE);
+    explicit ByteBuffer(const uint8_t* arr, uint32_t size);
     virtual ~ByteBuffer() = default;
 
-    unsigned int bytesRemaining() const; // Number of bytes from the current read position till the end of the buffer
+    uint32_t bytesRemaining() const; // Number of bytes from the current read position till the end of the buffer
     void clear(); // Clear our the vector and reset read and write positions
-    ByteBuffer* clone(); // Return a new instance of a bytebuffer with the exact same contents and the same state (rpos, wpos)
+    std::unique_ptr<ByteBuffer> clone(); // Return a new instance of a ByteBuffer with the exact same contents and the same state (rpos, wpos)
     //ByteBuffer compact(); // TODO?
     bool equals(const ByteBuffer* other) const; // Compare if the contents are equivalent
-    void resize(unsigned int newSize);
-    unsigned int size() const; // Size of internal vector
-    
+    void resize(uint32_t newSize);
+    uint32_t size() const; // Size of internal vector
+
     // Basic Searching (Linear)
-    template <typename T> int find(T key, unsigned int start=0) {
-        int ret = -1;
-        unsigned int len = buf.size();
-        for(unsigned int i = start; i < len; i++) {
+    template<typename T> int32_t find(T key, uint32_t start=0) {
+        int32_t ret = -1;
+        uint32_t len = buf.size();
+        for (uint32_t i = start; i < len; i++) {
             T data = read<T>(i);
             // Wasn't actually found, bounds of buffer were exceeded
-            if((key != 0) && (data == 0))
+            if ((key != 0) && (data == 0))
                 break;
-            
+
             // Key was found in array
-            if(data == key) {
+            if (data == key) {
                 ret = i;
                 break;
             }
         }
         return ret;
     }
-    
+
     // Replacement
-    void replace(byte key, byte rep, unsigned int start = 0, bool firstOccuranceOnly=false);
-    
+    void replace(uint8_t key, uint8_t rep, uint32_t start = 0, bool firstOccurrenceOnly=false);
+
     // Read
 
-    byte peek() const; // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
-    byte get(); // Relative get method. Reads the byte at the buffers current position then increments the position
-    byte get(unsigned int index) const; // Absolute get method. Read byte at index
-    void getBytes(byte* const out_buf, unsigned int out_len); // Absolute read into array buf of length len
+    uint8_t peek() const; // Relative peek. Reads and returns the next byte in the buffer from the current position but does not increment the read position
+    uint8_t get(); // Relative get method. Reads the byte at the buffers current position then increments the position
+    uint8_t get(uint32_t index) const; // Absolute get method. Read byte at index
+    void getBytes(uint8_t* const out_buf, uint32_t out_len); // Absolute read into array buf of length len
     char getChar(); // Relative
-    char getChar(unsigned int index) const; // Absolute
+    char getChar(uint32_t index) const; // Absolute
     double getDouble();
-    double getDouble(unsigned int index) const;
+    double getDouble(uint32_t index) const;
     float getFloat();
-    float getFloat(unsigned int index) const;
-    int getInt();
-    int getInt(unsigned int index) const;
-    long getLong();
-    long getLong(unsigned int index) const;
-    short getShort();
-    short getShort(unsigned int index) const;
+    float getFloat(uint32_t index) const;
+    uint32_t getInt();
+    uint32_t getInt(uint32_t index) const;
+    uint64_t getLong();
+    uint64_t getLong(uint32_t index) const;
+    uint16_t getShort();
+    uint16_t getShort(uint32_t index) const;
 
     // Write
 
     void put(const ByteBuffer* src); // Relative write of the entire contents of another ByteBuffer (src)
-    void put(byte b); // Relative write
-    void put(byte b, unsigned int index); // Absolute write at index
-    void putBytes(const byte* b, unsigned int len); // Relative write
-    void putBytes(const byte* b, unsigned int len, unsigned int index); // Absolute write starting at index
+    void put(uint8_t b); // Relative write
+    void put(uint8_t b, uint32_t index); // Absolute write at index
+    void putBytes(const uint8_t* b, uint32_t len); // Relative write
+    void putBytes(const uint8_t* b, uint32_t len, uint32_t index); // Absolute write starting at index
     void putChar(char value); // Relative
-    void putChar(char value, unsigned int index); // Absolute
+    void putChar(char value, uint32_t index); // Absolute
     void putDouble(double value);
-    void putDouble(double value, unsigned int index);
+    void putDouble(double value, uint32_t index);
     void putFloat(float value);
-    void putFloat(float value, unsigned int index);
-    void putInt(int value);
-    void putInt(int value, unsigned int index);
-    void putLong(long value);
-    void putLong(long value, unsigned int index);
-    void putShort(short value);
-    void putShort(short value, unsigned int index);
+    void putFloat(float value, uint32_t index);
+    void putInt(uint32_t value);
+    void putInt(uint32_t value, uint32_t index);
+    void putLong(uint64_t value);
+    void putLong(uint64_t value, uint32_t index);
+    void putShort(uint16_t value);
+    void putShort(uint16_t value, uint32_t index);
 
     // Buffer Position Accessors & Mutators
 
-    void setReadPos(unsigned int r) {
+    void setReadPos(uint32_t r) {
         rpos = r;
     }
 
-    int getReadPos() const {
+    uint32_t getReadPos() const {
         return rpos;
     }
 
-    void setWritePos(unsigned int w) {
+    void setWritePos(uint32_t w) {
         wpos = w;
     }
 
-    int getWritePos() const {
+    uint32_t getWritePos() const {
         return wpos;
     }
 
@@ -179,6 +145,50 @@ public:
     void printHex() const;
     void printPosition() const;
 #endif
+
+private:
+    uint32_t rpos = 0;
+    uint32_t wpos = 0;
+    std::vector<uint8_t> buf;
+
+#ifdef BB_UTILITY
+    std::string name = "";
+#endif
+
+    template<typename T> T read() {
+        T data = read<T>(rpos);
+        rpos += sizeof(T);
+        return data;
+    }
+
+    template<typename T> T read(uint32_t index) const {
+        if (index + sizeof(T) <= buf.size())
+            return *((T*)&buf[index]);
+        return 0;
+    }
+
+    template<typename T> void append(T data) {
+        uint32_t s = sizeof(data);
+
+        if (size() < (wpos + s))
+            buf.resize(wpos + s);
+        memcpy(&buf[wpos], (uint8_t*)&data, s);
+
+        wpos += s;
+    }
+
+    template<typename T> void insert(T data, uint32_t index) {
+        if ((index + sizeof(data)) > size()) {
+            buf.resize(size() + (index + sizeof(data)));
+        }
+
+        memcpy(&buf[index], (uint8_t*)&data, sizeof(data));
+        wpos = index + sizeof(data);
+    }
 };
+
+#ifdef BB_USE_NS
+}
+#endif
 
 #endif

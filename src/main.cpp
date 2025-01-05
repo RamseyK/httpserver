@@ -28,12 +28,12 @@
 static std::unique_ptr<HTTPServer> svr;
 
 // Ignore signals with this function
-void handleSigPipe([[maybe_unused]] int snum) {
+void handleSigPipe([[maybe_unused]] int32_t snum) {
     return;
 }
 
 // Termination signal handler (Ctrl-C)
-void handleTermSig([[maybe_unused]] int snum) {
+void handleTermSig([[maybe_unused]] int32_t snum) {
     svr->canRun = false;
 }
 
@@ -45,9 +45,9 @@ int main()
     std::string line;
     std::string key;
     std::string val;
-    int epos = 0;
-    int drop_uid = 0;
-    int drop_gid = 0;
+    int32_t epos = 0;
+    int32_t drop_uid = 0;
+    int32_t drop_gid = 0;
     cfile.open("server.config");
     if (!cfile.is_open()) {
         std::cout << "Unable to open server.config file in working directory" << std::endl;

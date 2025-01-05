@@ -51,7 +51,7 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
         return nullptr;
 
     std::ifstream file;
-    unsigned int len = 0;
+    uint32_t len = 0;
 
     // Open the file
     file.open(path.c_str(), std::ios::binary);
@@ -113,7 +113,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
         path += "/";
 
     // Probe for valid indexes
-    int numIndexes = std::size(validIndexes);
+    int32_t numIndexes = std::size(validIndexes);
     std::string loadIndex;
     struct stat sidx = {0};
     for (int i = 0; i < numIndexes; i++) {
@@ -130,7 +130,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     // Generate an HTML directory listing
     std::string listing = generateDirList(path);
 
-    unsigned int slen = listing.length();
+    uint32_t slen = listing.length();
     auto sdata = new char[slen];
     memset(sdata, 0x00, slen);
     strncpy(sdata, listing.c_str(), slen);

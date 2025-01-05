@@ -1,5 +1,5 @@
 /**
- ByteBuffer
+ httpserver
  HTTPRequest.h
  Copyright 2011-2025 Ramsey Kant
 
@@ -23,30 +23,29 @@
 
 class HTTPRequest final : public HTTPMessage {
 private:
-    int method = 0;
+    int32_t method = 0;
     std::string requestUri = "";
 
 public:
     HTTPRequest();
     explicit HTTPRequest(std::string const& sData);
-    explicit HTTPRequest(const byte* pData, unsigned int len);
+    explicit HTTPRequest(const uint8_t* pData, uint32_t len);
     ~HTTPRequest() override = default;
 
-    byte* create() override;
+    uint8_t* create() override;
     bool parse() override;
 
     // Helper functions
 
-    int methodStrToInt(std::string_view name) const;
-    std::string methodIntToStr(unsigned int mid) const;
+    int32_t methodStrToInt(std::string_view name) const;
+    std::string methodIntToStr(int32_t mid) const;
 
     // Info getters  & setters
-
-    void setMethod(int m) {
+    void setMethod(int32_t m) {
         method = m;
     }
 
-    int getMethod() const {
+    int32_t getMethod() const {
         return method;
     }
 

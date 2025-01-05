@@ -31,13 +31,13 @@ using byte = unsigned char;
 class SendQueueItem {
 
 private:
-    byte* sendData;
-    unsigned int sendSize;
-    unsigned int sendOffset = 0;
+    uint8_t* sendData;
+    uint32_t sendSize;
+    uint32_t sendOffset = 0;
     bool disconnect; // Flag indicating if the client should be disconnected after this item is dequeued
 
 public:
-    SendQueueItem(byte* data, unsigned int size, bool dc) : sendData(data), sendSize(size), disconnect(dc) {
+    SendQueueItem(uint8_t* data, uint32_t size, bool dc) : sendData(data), sendSize(size), disconnect(dc) {
     }
 
     ~SendQueueItem() {
@@ -47,15 +47,15 @@ public:
         }
     }
 
-    void setOffset(unsigned int off) {
+    void setOffset(uint32_t off) {
         sendOffset = off;
     }
 
-    byte* getData() const {
+    uint8_t* getData() const {
         return sendData;
     }
 
-    unsigned int getSize() const {
+    uint32_t getSize() const {
         return sendSize;
     }
 
@@ -63,7 +63,7 @@ public:
         return disconnect;
     }
 
-    unsigned int getOffset() const {
+    uint32_t getOffset() const {
         return sendOffset;
     }
 

@@ -2,4 +2,6 @@ bin/httpserver
 build/
 *DS_Store*
 
+.idea/*
+
 *.o

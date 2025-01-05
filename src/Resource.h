@@ -26,8 +26,8 @@ using byte = unsigned char;
 class Resource {
 
 private:
-    byte* data = nullptr; // File data
-    unsigned int size = 0;
+    uint8_t* data = nullptr; // File data
+    uint32_t size = 0;
     std::string mimeType = "";
     std::string location; // Disk path location within the server
     bool directory;
@@ -38,7 +38,7 @@ public:
 
     // Setters
 
-    void setData(byte* d, unsigned int s) {
+    void setData(uint8_t* d, uint32_t s) {
         data = d;
         size = s;
     }
@@ -61,11 +61,11 @@ public:
         return directory;
     }
 
-    byte* getData() const {
+    uint8_t* getData() const {
         return data;
     }
 
-    unsigned int getSize() const {
+    uint32_t getSize() const {
         return size;
     }
 

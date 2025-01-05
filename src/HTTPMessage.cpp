@@ -22,17 +22,17 @@ HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
 }
 
 HTTPMessage::HTTPMessage(std::string const& sData) : ByteBuffer(sData.size() + 1) {
-    putBytes((byte*)sData.c_str(), sData.size() + 1);
+    putBytes((uint8_t*)sData.c_str(), sData.size() + 1);
 }
 
-HTTPMessage::HTTPMessage(const byte* pData, unsigned int len) : ByteBuffer(pData, len) {
+HTTPMessage::HTTPMessage(const uint8_t* pData, uint32_t len) : ByteBuffer(pData, len) {
 }
 
 /**
  * Put Line
  * Append a line (string) to the backing ByteBuffer at the current position
  *
- * @param str String to put into the byte buffer
+ * @param str String to put into the ByteBuffer
  * @param crlf_end If true (default), end the line with a \r\n
  */
 void HTTPMessage::putLine(std::string str, bool crlf_end) {
@@ -41,7 +41,7 @@ void HTTPMessage::putLine(std::string str, bool crlf_end) {
         str += "\r\n";
 
     // Put the entire contents of str into the buffer
-    putBytes((byte*)str.c_str(), str.size());
+    putBytes((uint8_t*)str.c_str(), str.size());
 }
 
 /**
@@ -68,12 +68,12 @@ void HTTPMessage::putHeaders() {
  */
 std::string HTTPMessage::getLine() {
     std::string ret = "";
-    int startPos = getReadPos();
+    int32_t startPos = getReadPos();
     bool newLineReached = false;
     char c = 0;
 
     // Append characters to the return std::string until we hit the end of the buffer, a CR (13) or LF (10)
-    for (unsigned int i = startPos; i < size(); i++) {
+    for (uint32_t i = startPos; i < size(); i++) {
         // If the next byte is a \r or \n, we've reached the end of the line and should break out of the loop
         c = peek();
         if ((c == 13) || (c == 10)) {
@@ -94,8 +94,8 @@ std::string HTTPMessage::getLine() {
 
     // Increment the read position until the end of a CR or LF chain, so the read position will then point to the next line
     // Also, only read a maximum of 2 characters so as to not skip a blank line that is only \r\n
-    unsigned int k = 0;
-    for (unsigned int i = getReadPos(); i < size(); i++) {
+    uint32_t k = 0;
+    for (uint32_t i = getReadPos(); i < size(); i++) {
         if (k++ >= 2)
             break;
         c = getChar();
@@ -118,9 +118,9 @@ std::string HTTPMessage::getLine() {
  */
 std::string HTTPMessage::getStrElement(char delim) {
     std::string ret = "";
-    int startPos = getReadPos();
-    unsigned int size = 0;
-    int endPos = find(delim, startPos);
+    int32_t startPos = getReadPos();
+    uint32_t size = 0;
+    int32_t endPos = find(delim, startPos);
 
     // Calculate the size based on the found ending position
     size = (endPos + 1) - startPos;
@@ -128,10 +128,10 @@ std::string HTTPMessage::getStrElement(char delim) {
     if ((endPos == -1) || (size <= 0))
         return "";
 
-    // Grab the std::string from the byte buffer up to the delimiter
+    // Grab the std::string from the ByteBuffer up to the delimiter
     auto str = new char[size];
     memset(str, 0x00, size);
-    getBytes((byte*)str, size);
+    getBytes((uint8_t*)str, size);
     str[size - 1] = 0x00; // NULL termination
     ret.assign(str);
 
@@ -177,7 +177,7 @@ void HTTPMessage::parseHeaders() {
 bool HTTPMessage::parseBody() {
     // Content-Length should exist (size of the Body data) if there is body data
     std::string hlenstr = "";
-    unsigned int contentLen = 0;
+    uint32_t contentLen = 0;
     hlenstr = getHeaderValue("Content-Length");
 
     // No body data to read:
@@ -203,11 +203,11 @@ bool HTTPMessage::parseBody() {
     }
 
     // Create a big enough buffer to store the data
-    unsigned int dIdx = 0, s = size();
-    data = new byte[dataLen];
+    uint32_t dIdx = 0, s = size();
+    data = new uint8_t[dataLen];
 
     // Grab all the bytes from the current position to the end
-    for (unsigned int i = getReadPos(); i < s; i++) {
+    for (uint32_t i = getReadPos(); i < s; i++) {
         data[dIdx] = get(i);
         dIdx++;
     }
@@ -227,7 +227,7 @@ void HTTPMessage::addHeader(std::string const& line) {
     std::string key = "";
     std::string value = "";
     size_t kpos;
-    int i = 0;
+    int32_t i = 0;
     kpos = line.find(':');
     if (kpos == std::string::npos) {
         std::cout << "Could not addHeader: " << line.c_str() << std::endl;
@@ -263,7 +263,7 @@ void HTTPMessage::addHeader(std::string const& key, std::string const& value) {
  * @param key String representation of the Header Key
  * @param value Integer representation of the Header value
  */
-void HTTPMessage::addHeader(std::string const& key, int value) {
+void HTTPMessage::addHeader(std::string const& key, int32_t value) {
     std::stringstream sz;
     sz << value;
     headers.try_emplace(key, sz.str());
@@ -308,8 +308,8 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) const {
  * @param index Position in the headers map to retrieve a formatted header string
  * @ret Formatted string with header name and value
  */
-std::string HTTPMessage::getHeaderStr(int index) const {
-    int i = 0;
+std::string HTTPMessage::getHeaderStr(int32_t index) const {
+    int32_t i = 0;
     std::string ret = "";
     for (auto const &[key, value] : headers) {
         if (i == index) {
@@ -328,7 +328,7 @@ std::string HTTPMessage::getHeaderStr(int index) const {
  *
  * @return size of the map
  */
-int HTTPMessage::getNumHeaders() const {
+uint32_t HTTPMessage::getNumHeaders() const {
     return headers.size();
 }
 

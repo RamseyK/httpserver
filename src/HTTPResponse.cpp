@@ -1,5 +1,5 @@
 /**
- ByteBuffer
+ httpserver
  HTTPResponse.cpp
  Copyright 2011-2025 Ramsey Kant
 
@@ -25,7 +25,7 @@ HTTPResponse::HTTPResponse() : HTTPMessage() {
 HTTPResponse::HTTPResponse(std::string const& sData) : HTTPMessage(sData) {
 }
 
-HTTPResponse::HTTPResponse(const byte* pData, unsigned int len) : HTTPMessage(pData, len) {
+HTTPResponse::HTTPResponse(const uint8_t* pData, uint32_t len) : HTTPMessage(pData, len) {
 }
 
 /**
@@ -86,7 +86,7 @@ void HTTPResponse::determineReasonStr() {
  *
  * @return Byte array of this HTTPResponse to be sent over the wire
  */
-byte* HTTPResponse::create() {
+uint8_t* HTTPResponse::create() {
     // Clear the bytebuffer in the event this isn't the first call of create()
     clear();
 
@@ -104,7 +104,7 @@ byte* HTTPResponse::create() {
     }
 
     // Allocate space for the returned byte array and return it
-    auto createRetData = new byte[size()];
+    auto createRetData = new uint8_t[size()];
     setReadPos(0);
     getBytes(createRetData, size());
 
@@ -125,6 +125,12 @@ bool HTTPResponse::parse() {
     statusstr = getStrElement();
     determineStatusCode();
     reason = getLine(); // Pull till \r\n termination
+
+    // Optional - Validate the HTTP version. If there is a mismatch, discontinue parsing
+    // if (strcmp(version.c_str(), HTTP_VERSION) != 0) {
+    //     parseErrorStr = "Supported HTTP version does not match";
+    //     return false;
+    // }
 
     // Parse and populate the headers map using the parseHeaders helper
     parseHeaders();

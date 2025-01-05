@@ -43,20 +43,20 @@
 #include "HTTPResponse.h"
 #include "ResourceHost.h"
 
-constexpr int INVALID_SOCKET = -1;
-constexpr unsigned int QUEUE_SIZE = 1024;
+constexpr int32_t INVALID_SOCKET = -1;
+constexpr uint32_t QUEUE_SIZE = 1024;
 
 class HTTPServer {
     // Server Socket
-    int listenPort;
-    int listenSocket = INVALID_SOCKET; // Descriptor for the listening socket
+    int32_t listenPort;
+    int32_t listenSocket = INVALID_SOCKET; // Descriptor for the listening socket
     struct sockaddr_in serverAddr; // Structure for the server address
-    int dropUid; // setuid to this after bind()
-    int dropGid; // setgid to this after bind()
+    int32_t dropUid; // setuid to this after bind()
+    int32_t dropGid; // setgid to this after bind()
 
     // Kqueue
     struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
-    int kqfd = -1; // kqueue descriptor
+    int32_t kqfd = -1; // kqueue descriptor
     struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
 
     // Client map, maps Socket descriptor to Client object
@@ -67,12 +67,12 @@ class HTTPServer {
     std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
 
     // Connection processing
-    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int data, void* udata);
+    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata);
     void acceptConnection();
     Client* getClient(int clfd);
     void disconnectClient(Client* cl, bool mapErase = true);
-    void readClient(Client* cl, int data_len); // Client read event
-    bool writeClient(Client* cl, int avail_bytes); // Client write event
+    void readClient(Client* cl, int32_t data_len); // Client read event
+    bool writeClient(Client* cl, int32_t avail_bytes); // Client write event
     ResourceHost* getResourceHostForRequest(const HTTPRequest* req);
 
     // Request handling
@@ -82,14 +82,14 @@ class HTTPServer {
     void handleTrace(Client* cl, HTTPRequest* req);
 
     // Response
-    void sendStatusResponse(Client* cl, int status, std::string const& msg = "");
+    void sendStatusResponse(Client* cl, int32_t status, std::string const& msg = "");
     void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
 
 public:
     bool canRun = false;
 
 public:
-    HTTPServer(std::vector<std::string> const& vhost_aliases, int port, std::string const& diskpath, int drop_uid=0, int drop_gid=0);
+    HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t port, std::string const& diskpath, int32_t drop_uid=0, int32_t drop_gid=0);
     ~HTTPServer();
 
     bool start();

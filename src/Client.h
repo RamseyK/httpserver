@@ -28,7 +28,7 @@
 using byte = unsigned char;
 
 class Client {
-    int socketDesc; // Socket Descriptor
+    int32_t socketDesc; // Socket Descriptor
     sockaddr_in clientAddr;
 
     std::queue<SendQueueItem*> sendQueue;
@@ -41,7 +41,7 @@ public:
         return clientAddr;
     }
 
-    int getSocket() const {
+    int32_t getSocket() const {
         return socketDesc;
     }
 
@@ -50,7 +50,7 @@ public:
     }
 
     void addToSendQueue(SendQueueItem* item);
-    unsigned int sendQueueSize() const;
+    uint32_t sendQueueSize() const;
     SendQueueItem* nextInSendQueue();
     void dequeueFromSendQueue();
     void clearSendQueue();
