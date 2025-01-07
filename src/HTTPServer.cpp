@@ -345,7 +345,7 @@ void HTTPServer::readClient(Client* cl, int32_t data_len) {
         data_len = 1400;
 
     HTTPRequest* req;
-    auto pData = new char[data_len];
+    auto pData = new uint8_t[data_len];
     memset(pData, 0x00, data_len);
 
     // Receive data on the wire into pData
@@ -363,7 +363,7 @@ void HTTPServer::readClient(Client* cl, int32_t data_len) {
         disconnectClient(cl, true);
     } else {
         // Data received: Place the data in an HTTPRequest and pass it to handleRequest for processing
-        req = new HTTPRequest((byte*)pData, lenRecv);
+        req = new HTTPRequest(pData, lenRecv);
         handleRequest(cl, req);
         delete req;
     }
@@ -563,7 +563,7 @@ void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
 void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
     // Get a byte array representation of the request
     uint32_t len = req->size();
-    auto buf = new byte[len];
+    auto buf = new uint8_t[len];
     memset(buf, 0x00, len);
     req->setReadPos(0); // Set the read position at the beginning since the request has already been read to the end
     req->getBytes(buf, len);
@@ -599,13 +599,13 @@ void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string cons
         body +=  ": " + msg;
 
     uint32_t slen = body.length();
-    auto sdata = new char[slen];
+    auto sdata = new uint8_t[slen];
     memset(sdata, 0x00, slen);
-    strncpy(sdata, body.c_str(), slen);
+    strncpy((char*)sdata, body.c_str(), slen);
 
     resp->addHeader("Content-Type", "text/plain");
     resp->addHeader("Content-Length", slen);
-    resp->setData((byte*)sdata, slen);
+    resp->setData(sdata, slen);
 
     sendResponse(cl, resp, true);
 

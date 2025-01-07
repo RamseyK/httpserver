@@ -25,8 +25,6 @@
 
 #include "SendQueueItem.h"
 
-using byte = unsigned char;
-
 class Client {
     int32_t socketDesc; // Socket Descriptor
     sockaddr_in clientAddr;

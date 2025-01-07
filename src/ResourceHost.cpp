@@ -64,7 +64,7 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
     len = sb.st_size;
 
     // Allocate memory for contents of file and read in the contents
-    auto fdata = new byte[len];
+    auto fdata = new uint8_t[len];
     memset(fdata, 0x00, len);
     file.read((char*)fdata, len);
 
@@ -131,13 +131,13 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     std::string listing = generateDirList(path);
 
     uint32_t slen = listing.length();
-    auto sdata = new char[slen];
+    auto sdata = new uint8_t[slen];
     memset(sdata, 0x00, slen);
-    strncpy(sdata, listing.c_str(), slen);
+    strncpy((char*)sdata, listing.c_str(), slen);
 
     res = new Resource(path, true);
     res->setMimeType("text/html");
-    res->setData((byte*)sdata, slen);
+    res->setData(sdata, slen);
 
     return res;
 }

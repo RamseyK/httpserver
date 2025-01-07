@@ -21,8 +21,6 @@
 
 #include <string>
 
-using byte = unsigned char;
-
 class Resource {
 
 private:

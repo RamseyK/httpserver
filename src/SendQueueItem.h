@@ -21,8 +21,6 @@
 
 #include <cstdlib>
 
-using byte = unsigned char;
-
 /**
  * SendQueueItem
  * Object represents a piece of data in a clients send queue

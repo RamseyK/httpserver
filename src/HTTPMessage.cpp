@@ -129,11 +129,11 @@ std::string HTTPMessage::getStrElement(char delim) {
         return "";
 
     // Grab the std::string from the ByteBuffer up to the delimiter
-    auto str = new char[size];
+    auto str = new uint8_t[size];
     memset(str, 0x00, size);
-    getBytes((uint8_t*)str, size);
+    getBytes(str, size);
     str[size - 1] = 0x00; // NULL termination
-    ret.assign(str);
+    ret.assign((char*)str);
 
     // Increment the read position PAST the delimiter
     setReadPos(endPos + 1);
@@ -278,7 +278,7 @@ void HTTPMessage::addHeader(std::string const& key, int32_t value) {
  */
 std::string HTTPMessage::getHeaderValue(std::string const& key) const {
 
-    char c;
+    char c = 0;
     std::string key_lower = "";
 
     // Lookup in map
