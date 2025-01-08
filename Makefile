@@ -18,7 +18,7 @@ CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers \
 LDFLAGS += -fuse-ld=lld
 
 ifeq ($(DEBUG),1)
-CXXFLAGS += -O2 -g -DDEBUG=1 \
+CXXFLAGS += -O1 -g -DDEBUG=1 \
 			-fasynchronous-unwind-tables \
 			-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG \
 			-fstack-protector-all
