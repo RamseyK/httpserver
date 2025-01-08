@@ -18,7 +18,6 @@
 
 #include "HTTPServer.h"
 
-#include <unordered_map>
 #include <vector>
 #include <string>
 #include <ctime>
@@ -689,7 +688,7 @@ ResourceHost* HTTPServer::getResourceHostForRequest(const HTTPRequest* req) {
             host.append(std::format(":{}", listenPort));
         }
 
-        std::unordered_map<std::string, ResourceHost*>::const_iterator it = vhosts.find(host);
+        auto it = vhosts.find(host);
 
         if (it != vhosts.end())
             resHost = it->second;

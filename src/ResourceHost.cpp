@@ -20,7 +20,6 @@
 
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -37,7 +36,7 @@ ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
  * @return MIME type as a String. If type could not be found, returns an empty string
  */
 std::string ResourceHost::lookupMimeType(std::string const& ext) {
-    std::unordered_map<std::string, std::string>::const_iterator it = mimeMap.find(ext);
+    auto it = mimeMap.find(ext);
     if (it == mimeMap.end())
         return "";
 
