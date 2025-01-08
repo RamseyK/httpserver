@@ -60,7 +60,7 @@ uint32_t HTTPRequest::methodStrToInt(std::string_view name) const {
  */
 std::string HTTPRequest::methodIntToStr(uint32_t mid) const {
     // ID is out of bounds of the possible requestMethodStr indexes
-    if (mid < 0 || mid >= NUM_METHODS)
+    if (mid >= NUM_METHODS)
         return "";
 
     // Return the std::string matching the id
