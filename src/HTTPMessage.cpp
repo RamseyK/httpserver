@@ -222,7 +222,7 @@ bool HTTPMessage::parseBody() {
         dIdx++;
     }
 
-    // We could handle chuncked Request/Response parsing (with footers) here, but, we won't.
+    // We could handle chunked Request/Response parsing (with footers) here, but, we won't.
 
     return true;
 }
