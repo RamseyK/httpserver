@@ -19,29 +19,20 @@
 #ifndef _HTTPSERVER_H_
 #define _HTTPSERVER_H_
 
+#include "Client.h"
+#include "HTTPRequest.h"
+#include "HTTPResponse.h"
+#include "ResourceHost.h"
+
 #include <unordered_map>
 #include <vector>
 #include <string>
-
-#include <time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <fcntl.h>
 
 #ifdef __linux__
 #include <kqueue/sys/event.h> // libkqueue Linux - only works if libkqueue is compiled from Github sources
 #else
 #include <sys/event.h> // kqueue BSD / OS X
 #endif
-
-#include "Client.h"
-#include "HTTPRequest.h"
-#include "HTTPResponse.h"
-#include "ResourceHost.h"
 
 constexpr int32_t INVALID_SOCKET = -1;
 constexpr uint32_t QUEUE_SIZE = 1024;

@@ -19,7 +19,7 @@
 #ifndef _SENDQUEUEITEM_H_
 #define _SENDQUEUEITEM_H_
 
-#include <cstdlib>
+#include <cstdint>
 
 /**
  * SendQueueItem

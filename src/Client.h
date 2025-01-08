@@ -19,11 +19,12 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
+#include "SendQueueItem.h"
+
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <queue>
-
-#include "SendQueueItem.h"
 
 class Client {
     int32_t socketDesc; // Socket Descriptor

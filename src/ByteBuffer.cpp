@@ -20,6 +20,9 @@
 
 #include "ByteBuffer.h"
 
+#include <string>
+#include <iostream>
+
 #ifdef BB_USE_NS
 namespace bb {
 #endif

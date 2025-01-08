@@ -18,6 +18,8 @@
 
 #include "Resource.h"
 
+#include <string>
+
 Resource::Resource(std::string const& loc, bool dir) : location(loc), directory(dir) {
 }
 

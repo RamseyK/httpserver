@@ -18,6 +18,15 @@
 
 #include "ResourceHost.h"
 
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <fstream>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
     // TODO: Check to see if the baseDiskPath is a valid path
 }

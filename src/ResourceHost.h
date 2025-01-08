@@ -19,16 +19,9 @@
 #ifndef _RESOURCEHOST_H_
 #define _RESOURCEHOST_H_
 
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <cstring>
 #include <unordered_map>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fstream>
+#include <vector>
 
 #include "Resource.h"
 

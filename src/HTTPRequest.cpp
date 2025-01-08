@@ -19,6 +19,8 @@
 #include "HTTPMessage.h"
 #include "HTTPRequest.h"
 
+#include <iostream>
+
 HTTPRequest::HTTPRequest() : HTTPMessage() {
 }
 

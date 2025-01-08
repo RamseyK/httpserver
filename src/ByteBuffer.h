@@ -24,15 +24,12 @@
 // If defined, utility functions within the class are enabled
 #define BB_UTILITY
 
-#include <cstdlib>
 #include <cstdint>
-#include <cstring>
 #include <vector>
 #include <memory>
 
 #ifdef BB_UTILITY
-#include <iostream>
-#include <cstdio>
+#include <string>
 #endif
 
 // Default number of bytes to allocate in the backing buffer if no size is provided

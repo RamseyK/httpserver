@@ -18,6 +18,26 @@
 
 #include "HTTPServer.h"
 
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <ctime>
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#ifdef __linux__
+#include <kqueue/sys/event.h> // libkqueue Linux - only works if libkqueue is compiled from Github sources
+#else
+#include <sys/event.h> // kqueue BSD / OS X
+#endif
+
 /**
  * Server Constructor
  * Initialize state and server variables
@@ -628,13 +648,15 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
     std::string tstr;
     char tbuf[36] = {0};
     time_t rawtime;
-    const struct tm* ptm;
+    struct tm* ptm = nullptr;
     time(&rawtime);
-    ptm = gmtime(&rawtime);
-    // Ex: Fri, 31 Dec 1999 23:59:59 GMT
-    strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", ptm);
-    tstr = tbuf;
-    resp->addHeader("Date", tstr);
+    ptm = gmtime_r(&rawtime, ptm);
+    if (ptm != nullptr) {
+        // Ex: Fri, 31 Dec 1999 23:59:59 GMT
+        strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", ptm);
+        tstr = tbuf;
+        resp->addHeader("Date", tstr);
+    }
 
     // Include a Connection: close header if this is the final response sent by the server
     if (disconnect)
