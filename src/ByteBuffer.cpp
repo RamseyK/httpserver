@@ -20,8 +20,10 @@
 
 #include "ByteBuffer.h"
 
-#include <string>
+#ifdef BB_UTILITY
 #include <iostream>
+#include <string>
+#endif
 
 #ifdef BB_USE_NS
 namespace bb {
@@ -368,8 +370,8 @@ void ByteBuffer::printPosition() const {
             << wpos << std::endl;
 }
 
+#endif  // BB_UTILITY
+
 #ifdef BB_USE_NS
 }
-#endif
-
 #endif
