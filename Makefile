@@ -44,6 +44,6 @@ debug:
 	$(MAKE) DEBUG=1 all
 
 asan:
-	CXXFLAGS="-fsanitize=address,undefined" make debug
+	CXXFLAGS=-fsanitize=address,undefined make debug
 
 .PHONY: all make-src clean debug asan
