@@ -9,11 +9,13 @@ CXX = clang++
 
 CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers \
 			-Wformat -Wformat=2 -Wimplicit-fallthrough \
-			-fPIE \
+			-march=x86-64-v2 -fPIE \
 			-fexceptions \
 			-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer \
 			-fno-delete-null-pointer-checks -fno-strict-aliasing \
 			-pedantic -std=c++23
+
+LDFLAGS += -fuse-ld=lld
 
 ifeq ($(DEBUG), 1)
 CXXFLAGS += -O2 -g -DDEBUG=1 \
@@ -21,7 +23,7 @@ CXXFLAGS += -O2 -g -DDEBUG=1 \
 			-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG \
 			-fstack-protector-all
 else
-CXXFLAGS += -march=x86-64-v3 -O2 -DNDEBUG -flto=auto
+CXXFLAGS += -O2 -DNDEBUG -flto=auto
 LDFLAGS += -flto=auto
 endif
 
