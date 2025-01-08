@@ -17,7 +17,7 @@ CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers \
 
 LDFLAGS += -fuse-ld=lld
 
-ifeq ($(DEBUG), 1)
+ifeq ($(DEBUG),1)
 CXXFLAGS += -O2 -g -DDEBUG=1 \
 			-fasynchronous-unwind-tables \
 			-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG \
@@ -42,9 +42,9 @@ clean:
 	rm -f $(CLEANFILES)
 
 debug:
-	$(MAKE) DEBUG=1 all
+	DEBUG=1 $(MAKE) all
 
 asan:
-	CXXFLAGS=-fsanitize=address $(MAKE) debug
+	CXXFLAGS=-fsanitize=address DEBUG=1 $(MAKE) all
 
 .PHONY: all make-src clean debug asan
