@@ -19,6 +19,9 @@
 #include "HTTPMessage.h"
 #include "HTTPResponse.h"
 
+#include <sstream>
+#include <string>
+
 HTTPResponse::HTTPResponse() : HTTPMessage() {
 }
 
