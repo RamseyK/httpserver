@@ -119,7 +119,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     for (uint32_t i = 0; i < numIndexes; i++) {
         loadIndex = path + validIndexes[i];
         // Found a suitable index file to load and return to the client
-        if (stat(loadIndex.c_str(), &sidx) != -1)
+        if (stat(loadIndex.c_str(), &sidx) == 0)
             return readFile(loadIndex, sidx);
     }
 
@@ -206,7 +206,7 @@ Resource* ResourceHost::getResource(std::string const& uri) {
 
     // Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
     struct stat sb = {0};
-    if (stat(path.c_str(), &sb) == -1)
+    if (stat(path.c_str(), &sb) != 0)
         return nullptr; // File not found
 
     // Determine file type

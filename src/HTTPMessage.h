@@ -29,7 +29,9 @@
 constexpr std::string HTTP_VERSION_10 = "HTTP/1.0";
 constexpr std::string HTTP_VERSION_11 = "HTTP/1.1";
 constexpr std::string DEFAULT_HTTP_VERSION = HTTP_VERSION_11;
-constexpr int32_t NUM_METHODS = 9;
+constexpr uint32_t NUM_METHODS = 9;
+constexpr uint32_t INVALID_METHOD = 9999;
+static_assert(NUM_METHODS < INVALID_METHOD, "INVALID_METHOD must be greater than NUM_METHODS");
 
 // HTTP Methods (Requests)
 

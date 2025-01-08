@@ -325,12 +325,12 @@ std::string ByteBuffer::getName() const {
 
 void ByteBuffer::printInfo() const {
     uint32_t length = buf.size();
-    std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". Info Print" << std::endl;
+    std::cout << "ByteBuffer " << name << " Length: " << length << ". Info Print" << std::endl;
 }
 
 void ByteBuffer::printAH() const {
     uint32_t length = buf.size();
-    std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". ASCII & Hex Print" << std::endl;
+    std::cout << "ByteBuffer " << name << " Length: " << length << ". ASCII & Hex Print" << std::endl;
     for (uint32_t i = 0; i < length; i++) {
         std::printf("0x%02x ", buf[i]);
     }
@@ -343,7 +343,7 @@ void ByteBuffer::printAH() const {
 
 void ByteBuffer::printAscii() const {
     uint32_t length = buf.size();
-    std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". ASCII Print" << std::endl;
+    std::cout << "ByteBuffer " << name << " Length: " << length << ". ASCII Print" << std::endl;
     for (uint32_t i = 0; i < length; i++) {
         std::printf("%c ", buf[i]);
     }
@@ -352,7 +352,7 @@ void ByteBuffer::printAscii() const {
 
 void ByteBuffer::printHex() const {
     uint32_t length = buf.size();
-    std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << ". Hex Print" << std::endl;
+    std::cout << "ByteBuffer " << name << " Length: " << length << ". Hex Print" << std::endl;
     for (uint32_t i = 0; i < length; i++) {
         std::printf("0x%02x ", buf[i]);
     }
@@ -361,7 +361,7 @@ void ByteBuffer::printHex() const {
 
 void ByteBuffer::printPosition() const {
     uint32_t length = buf.size();
-    std::cout << "ByteBuffer " << name.c_str() << " Length: " << length << " Read Pos: " << rpos << ". Write Pos: "
+    std::cout << "ByteBuffer " << name << " Length: " << length << " Read Pos: " << rpos << ". Write Pos: "
             << wpos << std::endl;
 }
 
