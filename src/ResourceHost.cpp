@@ -25,6 +25,18 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+// Valid files to serve as an index of a directory
+const static std::vector<std::string> g_validIndexes = {
+    "index.html",
+    "index.htm"
+};
+
+// Dictionary that relates file extensions to their MIME type
+const static std::unordered_map<std::string, std::string> g_mimeMap = {
+#define STR_PAIR(K,V) std::pair<std::string, std::string>(K,V)
+#include "MimeTypes.inc"
+};
+
 ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
     // TODO: Check to see if the baseDiskPath is a valid path
 }
@@ -36,8 +48,8 @@ ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
  * @return MIME type as a String. If type could not be found, returns an empty string
  */
 std::string ResourceHost::lookupMimeType(std::string const& ext) {
-    auto it = mimeMap.find(ext);
-    if (it == mimeMap.end())
+    auto it = g_mimeMap.find(ext);
+    if (it == g_mimeMap.end())
         return "";
 
     return it->second;
@@ -119,11 +131,11 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
         path += "/";
 
     // Probe for valid indexes
-    uint32_t numIndexes = std::size(validIndexes);
+    uint32_t numIndexes = std::size(g_validIndexes);
     std::string loadIndex;
     struct stat sidx = {0};
     for (uint32_t i = 0; i < numIndexes; i++) {
-        loadIndex = path + validIndexes[i];
+        loadIndex = path + g_validIndexes[i];
         // Found a suitable index file to load and return to the client
         if (stat(loadIndex.c_str(), &sidx) == 0)
             return readFile(loadIndex, sidx);
