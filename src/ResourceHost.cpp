@@ -57,6 +57,20 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
     if (!(sb.st_mode & S_IRWXU))
         return nullptr;
 
+    // Create a new Resource object and setup it's contents
+    auto res = new Resource(path);
+    std::string name = res->getName();
+    if (name.length() == 0) {
+        delete res;
+        return nullptr;  // Malformed name
+    }
+
+    // Always disallow hidden files
+    if (name.starts_with(".")) {
+        delete res;
+        return nullptr;
+    }
+
     std::ifstream file;
     uint32_t len = 0;
 
@@ -77,20 +91,6 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
 
     // Close the file
     file.close();
-
-    // Create a new Resource object and setup it's contents
-    auto res = new Resource(path);
-    std::string name = res->getName();
-    if (name.length() == 0) {
-        delete res;
-        return nullptr;  // Malformed name
-    }
-
-    // Always disallow hidden files
-    if (name.c_str()[0] == '.') {
-        delete res;
-        return nullptr;
-    }
 
     std::string mimetype = lookupMimeType(res->getExtension());
     if (mimetype.length() != 0) {
@@ -114,7 +114,6 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
  * @return Return's the resource object upon successful load
  */
 Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
-    Resource* res = nullptr;
     // Make the path end with a / (for consistency) if it doesnt already
     if (path.empty() || path[path.length() - 1] != '/')
         path += "/";
@@ -142,7 +141,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     memset(sdata, 0x00, slen);
     strncpy((char*)sdata, listing.c_str(), slen);
 
-    res = new Resource(path, true);
+    Resource* res = new Resource(path, true);
     res->setMimeType("text/html");
     res->setData(sdata, slen);
 
@@ -165,10 +164,8 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
     std::stringstream ret;
     ret << "<html><head><title>" << uri << "</title></head><body>";
 
-    DIR* dir;
-    const struct dirent* ent;
-
-    dir = opendir(path.c_str());
+    const struct dirent* ent = nullptr;
+    DIR* dir = opendir(path.c_str());
     if (dir == nullptr)
         return "";
 
@@ -208,10 +205,8 @@ Resource* ResourceHost::getResource(std::string const& uri) {
     if (uri.contains("../") || uri.contains("/.."))
         return nullptr;
 
-    std::string path = baseDiskPath + uri;
-    Resource* res = nullptr;
-
     // Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
+    std::string path = baseDiskPath + uri;
     struct stat sb = {0};
     if (stat(path.c_str(), &sb) != 0)
         return nullptr; // File not found
@@ -219,13 +214,13 @@ Resource* ResourceHost::getResource(std::string const& uri) {
     // Determine file type
     if (sb.st_mode & S_IFDIR) { // Directory
         // Read a directory list or index into memory from FS
-        res = readDirectory(path, sb);
+        return readDirectory(path, sb);
     } else if (sb.st_mode & S_IFREG) { // Regular file
         // Attempt to load the file into memory from the FS
-        res = readFile(path, sb);
-    } else { // Something else..device, socket, symlink
-        return nullptr;
+        return readFile(path, sb);
+    } else {
+        // Something else..device, socket, symlink
     }
 
-    return res;
+    return nullptr;
 }
