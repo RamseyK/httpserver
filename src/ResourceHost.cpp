@@ -33,7 +33,6 @@ const static std::vector<std::string> g_validIndexes = {
 
 // Dictionary that relates file extensions to their MIME type
 const static std::unordered_map<std::string, std::string> g_mimeMap = {
-#define STR_PAIR(K,V) std::pair<std::string, std::string>(K,V)
 #include "MimeTypes.inc"
 };
 

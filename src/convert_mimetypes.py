@@ -32,7 +32,7 @@ def main():
 
     with open(args.output, "w") as fh:
         for ext, mimetype in mapping.items():
-            fh.write(f'STR_PAIR("{ext}", "{mimetype}"),\n')
+            fh.write(f'{{"{ext}", "{mimetype}"}},\n')
 
     return 0
 
