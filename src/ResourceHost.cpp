@@ -86,7 +86,7 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
     uint32_t len = 0;
 
     // Open the file
-    file.open(path.c_str(), std::ios::binary);
+    file.open(path, std::ios::binary);
 
     // Return null if the file failed to open
     if (!file.is_open())
