@@ -21,9 +21,6 @@
 #ifndef _BYTEBUFFER_H_
 #define _BYTEBUFFER_H_
 
-// If defined, utility functions within the class are enabled
-#define BB_UTILITY
-
 #include <cstdint>
 #include <vector>
 #include <memory>
