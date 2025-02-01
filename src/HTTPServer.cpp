@@ -201,7 +201,6 @@ void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflag
  */
 void HTTPServer::process() {
     int32_t nev = 0; // Number of changed events returned by kevent
-    Client* cl = nullptr;
 
     while (canRun) {
         // Get a list of changed socket descriptors with a read event triggered in evList
@@ -221,7 +220,7 @@ void HTTPServer::process() {
             }
 
             // Client descriptor has triggered an event
-            cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
+            auto cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
             if (cl == nullptr) {
                 std::cout << "Could not find client" << std::endl;
                 // Remove socket events from kqueue
@@ -281,18 +280,14 @@ void HTTPServer::acceptConnection() {
     // Set socket as non blocking
     fcntl(clfd, F_SETFL, O_NONBLOCK);
 
-    // Instance Client object
-    auto cl = new Client(clfd, clientAddr);
-
     // Add kqueue event to track the new client socket for READ and WRITE events
     updateEvent(clfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
     updateEvent(clfd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL); // Disabled initially
 
     // Add the client object to the client map
-    clientMap.try_emplace(clfd, cl);
-
-    // Print the client's IP on connect
+    auto cl = std::make_unique<Client>(clfd, clientAddr);
     std::cout << "[" << cl->getClientIP() << "] connected" << std::endl;
+    clientMap.try_emplace(clfd, std::move(cl));
 }
 
 /**
@@ -302,7 +297,7 @@ void HTTPServer::acceptConnection() {
  * @param clfd Client socket descriptor
  * @return Pointer to Client object if found. NULL otherwise
  */
-Client* HTTPServer::getClient(int clfd) {
+std::shared_ptr<Client> HTTPServer::getClient(int clfd) {
     auto it = clientMap.find(clfd);
 
     // Client wasn't found
@@ -321,7 +316,7 @@ Client* HTTPServer::getClient(int clfd) {
  * @param mapErase When true, remove the client from the client map. Needed if operations on the
  * client map are being performed and we don't want to remove the map entry right away
  */
-void HTTPServer::disconnectClient(Client* cl, bool mapErase) {
+void HTTPServer::disconnectClient(std::shared_ptr<Client> cl, bool mapErase) {
     if (cl == nullptr)
         return;
 
@@ -337,9 +332,6 @@ void HTTPServer::disconnectClient(Client* cl, bool mapErase) {
     // Remove the client from the clientMap
     if (mapErase)
         clientMap.erase(cl->getSocket());
-
-    // Delete the client object from memory
-    delete cl;
 }
 
 /**
@@ -350,7 +342,7 @@ void HTTPServer::disconnectClient(Client* cl, bool mapErase) {
  * @param cl Pointer to Client that sent the data
  * @param data_len Number of bytes waiting to be read
  */
-void HTTPServer::readClient(Client* cl, int32_t data_len) {
+void HTTPServer::readClient(std::shared_ptr<Client> cl, int32_t data_len) {
     if (cl == nullptr)
         return;
 
@@ -389,7 +381,7 @@ void HTTPServer::readClient(Client* cl, int32_t data_len) {
  * @param cl Pointer to Client that sent the data
  * @param avail_bytes Number of bytes available for writing in the send buffer
  */
-bool HTTPServer::writeClient(Client* cl, int32_t avail_bytes) {
+bool HTTPServer::writeClient(std::shared_ptr<Client> cl, int32_t avail_bytes) {
     if (cl == nullptr)
         return false;
 
@@ -453,7 +445,7 @@ bool HTTPServer::writeClient(Client* cl, int32_t avail_bytes) {
  * @param cl Client object where request originated from
  * @param req HTTPRequest object filled with raw packet data
  */
-void HTTPServer::handleRequest(Client* cl, HTTPRequest* req) {
+void HTTPServer::handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const req) {
     // Parse the request
     // If there's an error, report it and send a server error in response
     if (!req->parse()) {
@@ -496,7 +488,7 @@ void HTTPServer::handleRequest(Client* cl, HTTPRequest* req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
+void HTTPServer::handleGet(std::shared_ptr<Client> cl, HTTPRequest* const req) {
     auto resHost = this->getResourceHostForRequest(req);
 
     // ResourceHost couldnt be determined or the Host specified by the client was invalid
@@ -546,7 +538,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
+void HTTPServer::handleOptions(std::shared_ptr<Client> cl, [[maybe_unused]] HTTPRequest* const req) {
     // For now, we'll always return the capabilities of the server instead of figuring it out for each resource
     std::string allow = "HEAD, GET, OPTIONS, TRACE";
 
@@ -566,7 +558,7 @@ void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
+void HTTPServer::handleTrace(std::shared_ptr<Client> cl, HTTPRequest* const req) {
     // Get a byte array representation of the request
     uint32_t len = req->size();
     auto buf = std::make_unique<uint8_t[]>(len);
@@ -591,7 +583,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
  * @param status Status code corresponding to the enum in HTTPMessage.h
  * @param msg An additional message to append to the body text
  */
-void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string const& msg) {
+void HTTPServer::sendStatusResponse(std::shared_ptr<Client> cl, int32_t status, std::string const& msg) {
     auto resp = std::make_unique<HTTPResponse>();
     resp->setStatus(status);
 
@@ -620,7 +612,7 @@ void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string cons
  * @param buf ByteBuffer containing data to be sent
  * @param disconnect Should the server disconnect the client after sending (Optional, default = false)
  */
-void HTTPServer::sendResponse(Client* cl, std::unique_ptr<HTTPResponse> resp, bool disconnect) {
+void HTTPServer::sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPResponse> resp, bool disconnect) {
     // Server Header
     resp->addHeader("Server", "httpserver/1.0");
 
@@ -653,7 +645,7 @@ void HTTPServer::sendResponse(Client* cl, std::unique_ptr<HTTPResponse> resp, bo
  * 
  * @param req State of the request
  */
-std::shared_ptr<ResourceHost> HTTPServer::getResourceHostForRequest(const HTTPRequest* req) {
+std::shared_ptr<ResourceHost> HTTPServer::getResourceHostForRequest(const HTTPRequest* const req) {
     // Determine the appropriate vhost
     std::string host = "";
 

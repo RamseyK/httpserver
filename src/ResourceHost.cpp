@@ -102,8 +102,7 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
     // Close the file
     file.close();
 
-    std::string mimetype = lookupMimeType(res->getExtension());
-    if (mimetype.length() != 0) {
+    if (auto mimetype = lookupMimeType(res->getExtension()); mimetype.length() != 0) {
         res->setMimeType(mimetype);
     } else {
         res->setMimeType("application/octet-stream");  // default to binary

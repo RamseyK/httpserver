@@ -52,7 +52,7 @@ class HTTPServer {
     struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
 
     // Client map, maps Socket descriptor to Client object
-    std::unordered_map<int, Client*> clientMap;
+    std::unordered_map<int, std::shared_ptr<Client>> clientMap;
 
     // Resources / File System
     std::vector<std::shared_ptr<ResourceHost>> hostList; // Contains all ResourceHosts
@@ -61,21 +61,21 @@ class HTTPServer {
     // Connection processing
     void updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata);
     void acceptConnection();
-    Client* getClient(int clfd);
-    void disconnectClient(Client* cl, bool mapErase = true);
-    void readClient(Client* cl, int32_t data_len); // Client read event
-    bool writeClient(Client* cl, int32_t avail_bytes); // Client write event
-    std::shared_ptr<ResourceHost> getResourceHostForRequest(const HTTPRequest* req);
+    std::shared_ptr<Client> getClient(int clfd);
+    void disconnectClient(std::shared_ptr<Client> cl, bool mapErase = true);
+    void readClient(std::shared_ptr<Client> cl, int32_t data_len); // Client read event
+    bool writeClient(std::shared_ptr<Client> cl, int32_t avail_bytes); // Client write event
+    std::shared_ptr<ResourceHost> getResourceHostForRequest(const HTTPRequest* const req);
 
     // Request handling
-    void handleRequest(Client* cl, HTTPRequest* req);
-    void handleGet(Client* cl, HTTPRequest* req);
-    void handleOptions(Client* cl, HTTPRequest* req);
-    void handleTrace(Client* cl, HTTPRequest* req);
+    void handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const req);
+    void handleGet(std::shared_ptr<Client> cl, HTTPRequest* const req);
+    void handleOptions(std::shared_ptr<Client> cl, HTTPRequest* const req);
+    void handleTrace(std::shared_ptr<Client> cl, HTTPRequest* const req);
 
     // Response
-    void sendStatusResponse(Client* cl, int32_t status, std::string const& msg = "");
-    void sendResponse(Client* cl, std::unique_ptr<HTTPResponse> resp, bool disconnect);
+    void sendStatusResponse(std::shared_ptr<Client> cl, int32_t status, std::string const& msg = "");
+    void sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPResponse> resp, bool disconnect);
 
 public:
     bool canRun = false;
