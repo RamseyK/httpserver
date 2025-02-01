@@ -34,6 +34,9 @@ class Client {
 public:
     Client(int fd, sockaddr_in addr);
     ~Client();
+    Client& operator=(Client const&) = delete;  // Copy assignment
+    Client(Client &&) = delete;  // Move
+    Client& operator=(Client &&) = delete;  // Move assignment
 
     sockaddr_in getClientAddr() const {
         return clientAddr;

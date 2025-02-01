@@ -39,8 +39,11 @@ public:
     SendQueueItem(std::unique_ptr<uint8_t[]> data, uint32_t size, bool dc) : sendData(std::move(data)), sendSize(size), disconnect(dc) {
     }
 
-    ~SendQueueItem() {
-    }
+    ~SendQueueItem() = default;
+    SendQueueItem(SendQueueItem const&) = delete;  // Copy constructor
+    SendQueueItem& operator=(SendQueueItem const&) = delete;  // Copy assignment
+    SendQueueItem(SendQueueItem &&) = delete;  // Move
+    SendQueueItem& operator=(SendQueueItem &&) = delete;  // Move assignment
 
     void setOffset(uint32_t off) {
         sendOffset = off;

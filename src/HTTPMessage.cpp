@@ -27,7 +27,7 @@ HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
 }
 
 HTTPMessage::HTTPMessage(std::string const& sData) : ByteBuffer(sData.size() + 1) {
-    putBytes((uint8_t*)sData.c_str(), sData.size() + 1);
+    putBytes((const uint8_t* const)sData.c_str(), sData.size() + 1);
 }
 
 HTTPMessage::HTTPMessage(const uint8_t* pData, uint32_t len) : ByteBuffer(pData, len) {
@@ -46,7 +46,7 @@ void HTTPMessage::putLine(std::string str, bool crlf_end) {
         str += "\r\n";
 
     // Put the entire contents of str into the buffer
-    putBytes((uint8_t*)str.c_str(), str.size());
+    putBytes((const uint8_t* const)str.c_str(), str.size());
 }
 
 /**

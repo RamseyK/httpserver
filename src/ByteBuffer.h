@@ -95,8 +95,8 @@ public:
     void put(const ByteBuffer* src); // Relative write of the entire contents of another ByteBuffer (src)
     void put(uint8_t b); // Relative write
     void put(uint8_t b, uint32_t index); // Absolute write at index
-    void putBytes(const uint8_t* b, uint32_t len); // Relative write
-    void putBytes(const uint8_t* b, uint32_t len, uint32_t index); // Absolute write starting at index
+    void putBytes(const uint8_t* const b, uint32_t len); // Relative write
+    void putBytes(const uint8_t* const b, uint32_t len, uint32_t index); // Absolute write starting at index
     void putChar(char value); // Relative
     void putChar(char value, uint32_t index); // Absolute
     void putDouble(double value);
