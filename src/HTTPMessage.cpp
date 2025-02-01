@@ -21,6 +21,7 @@
 #include <string>
 #include <format>
 #include <iostream>
+#include <memory>
 
 HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
 }
@@ -137,11 +138,10 @@ std::string HTTPMessage::getStrElement(char delim) {
         return "";
 
     // Grab the std::string from the ByteBuffer up to the delimiter
-    auto str = new char[size];
-    memset(str, 0x00, size);
-    getBytes((uint8_t*)str, size);
+    auto str = std::make_unique<char[]>(size);
+    getBytes((uint8_t*)str.get(), size);
     str[size - 1] = 0x00; // NULL termination
-    std::string ret = str;
+    std::string ret = str.get();
 
     // Increment the read position PAST the delimiter
     setReadPos(endPos + 1);

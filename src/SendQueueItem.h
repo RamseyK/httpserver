@@ -20,6 +20,7 @@
 #define _SENDQUEUEITEM_H_
 
 #include <cstdint>
+#include <memory>
 
 /**
  * SendQueueItem
@@ -29,28 +30,24 @@
 class SendQueueItem {
 
 private:
-    uint8_t* sendData;
+    std::unique_ptr<uint8_t[]> sendData;
     uint32_t sendSize;
     uint32_t sendOffset = 0;
     bool disconnect; // Flag indicating if the client should be disconnected after this item is dequeued
 
 public:
-    SendQueueItem(uint8_t* data, uint32_t size, bool dc) : sendData(data), sendSize(size), disconnect(dc) {
+    SendQueueItem(std::unique_ptr<uint8_t[]> data, uint32_t size, bool dc) : sendData(std::move(data)), sendSize(size), disconnect(dc) {
     }
 
     ~SendQueueItem() {
-        if (sendData != nullptr) {
-            delete [] sendData;
-            sendData = nullptr;
-        }
     }
 
     void setOffset(uint32_t off) {
         sendOffset = off;
     }
 
-    uint8_t* getData() const {
-        return sendData;
+    uint8_t* getRawDataPointer() const {
+        return sendData.get();
     }
 
     uint32_t getSize() const {

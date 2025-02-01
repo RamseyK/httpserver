@@ -24,6 +24,7 @@
 #include "HTTPResponse.h"
 #include "ResourceHost.h"
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -54,8 +55,8 @@ class HTTPServer {
     std::unordered_map<int, Client*> clientMap;
 
     // Resources / File System
-    std::vector<ResourceHost*> hostList; // Contains all ResourceHosts
-    std::unordered_map<std::string, ResourceHost*> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
+    std::vector<std::shared_ptr<ResourceHost>> hostList; // Contains all ResourceHosts
+    std::unordered_map<std::string, std::shared_ptr<ResourceHost>> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
 
     // Connection processing
     void updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata);
@@ -64,7 +65,7 @@ class HTTPServer {
     void disconnectClient(Client* cl, bool mapErase = true);
     void readClient(Client* cl, int32_t data_len); // Client read event
     bool writeClient(Client* cl, int32_t avail_bytes); // Client write event
-    ResourceHost* getResourceHostForRequest(const HTTPRequest* req);
+    std::shared_ptr<ResourceHost> getResourceHostForRequest(const HTTPRequest* req);
 
     // Request handling
     void handleRequest(Client* cl, HTTPRequest* req);
@@ -74,7 +75,7 @@ class HTTPServer {
 
     // Response
     void sendStatusResponse(Client* cl, int32_t status, std::string const& msg = "");
-    void sendResponse(Client* cl, HTTPResponse* resp, bool disconnect);
+    void sendResponse(Client* cl, std::unique_ptr<HTTPResponse> resp, bool disconnect);
 
 public:
     bool canRun = false;

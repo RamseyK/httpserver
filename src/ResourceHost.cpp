@@ -18,6 +18,7 @@
 
 #include "ResourceHost.h"
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <fstream>
@@ -63,22 +64,20 @@ std::string ResourceHost::lookupMimeType(std::string const& ext) {
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb) {
+std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct stat const& sb) {
     // Make sure the webserver USER owns the file
     if (!(sb.st_mode & S_IRWXU))
         return nullptr;
 
     // Create a new Resource object and setup it's contents
-    auto res = new Resource(path);
+    auto res = std::make_unique<Resource>(path);
     std::string name = res->getName();
     if (name.length() == 0) {
-        delete res;
         return nullptr;  // Malformed name
     }
 
     // Always disallow hidden files
     if (name.starts_with(".")) {
-        delete res;
         return nullptr;
     }
 
@@ -124,7 +123,7 @@ Resource* ResourceHost::readFile(std::string const& path, struct stat const& sb)
  * @param sb Filled in stat struct
  * @return Return's the resource object upon successful load
  */
-Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
+std::unique_ptr<Resource> ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     // Make the path end with a / (for consistency) if it doesnt already
     if (path.empty() || path[path.length() - 1] != '/')
         path += "/";
@@ -152,7 +151,7 @@ Resource* ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     memset(sdata, 0x00, slen);
     strncpy((char*)sdata, listing.c_str(), slen);
 
-    Resource* res = new Resource(path, true);
+    auto res = std::make_unique<Resource>(path, true);
     res->setMimeType("text/html");
     res->setData(sdata, slen);
 
@@ -208,7 +207,7 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
  * @param uri The URI sent in the request
  * @return NULL if unable to load the resource. Resource object
  */
-Resource* ResourceHost::getResource(std::string const& uri) {
+std::unique_ptr<Resource> ResourceHost::getResource(std::string const& uri) {
     if (uri.length() > 255 || uri.empty())
         return nullptr;
 

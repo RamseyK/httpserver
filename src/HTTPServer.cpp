@@ -21,6 +21,7 @@
 #include <vector>
 #include <string>
 #include <ctime>
+#include <memory>
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -53,7 +54,7 @@ HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t po
     std::cout << "Disk path: " << diskpath << std::endl;
 
     // Create a resource host serving the base path ./htdocs on disk
-    auto resHost = new ResourceHost(diskpath);
+    auto resHost = std::make_shared<ResourceHost>(diskpath);
     hostList.push_back(resHost);
 
     // Always serve up localhost/127.0.0.1 (which is why we only added one ResourceHost to hostList above)
@@ -77,12 +78,7 @@ HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t po
  * Removes all resources created in the constructor
  */
 HTTPServer::~HTTPServer() {
-    // Loop through hostList and delete all ResourceHosts
-    while (!hostList.empty()) {
-        ResourceHost* resHost = hostList.back();
-        delete resHost;
-        hostList.pop_back();
-    }
+    hostList.clear();
     vhosts.clear();
 }
 
@@ -363,13 +359,11 @@ void HTTPServer::readClient(Client* cl, int32_t data_len) {
     if (data_len <= 0)
         data_len = 1400;
 
-    HTTPRequest* req;
-    auto pData = new uint8_t[data_len];
-    memset(pData, 0x00, data_len);
+    auto pData = std::make_unique<uint8_t[]>(data_len);
 
     // Receive data on the wire into pData
     int32_t flags = 0;
-    ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
+    ssize_t lenRecv = recv(cl->getSocket(), pData.get(), data_len, flags);
 
     // Determine state of the client socket and act on it
     if (lenRecv == 0) {
@@ -382,12 +376,10 @@ void HTTPServer::readClient(Client* cl, int32_t data_len) {
         disconnectClient(cl, true);
     } else {
         // Data received: Place the data in an HTTPRequest and pass it to handleRequest for processing
-        req = new HTTPRequest(pData, lenRecv);
+        auto req = new HTTPRequest(pData.get(), lenRecv);
         handleRequest(cl, req);
         delete req;
     }
-
-    delete [] pData;
 }
 
 /**
@@ -414,11 +406,11 @@ bool HTTPServer::writeClient(Client* cl, int32_t avail_bytes) {
         avail_bytes = 64;
     }
 
-    SendQueueItem* item = cl->nextInSendQueue();
+    auto item = cl->nextInSendQueue();
     if (item == nullptr)
         return false;
 
-    const uint8_t* pData = item->getData();
+    const uint8_t* const pData = item->getRawDataPointer();
 
     // Size of data left to send for the item
     int32_t remaining = item->getSize() - item->getOffset();
@@ -505,9 +497,7 @@ void HTTPServer::handleRequest(Client* cl, HTTPRequest* req) {
  * @param req State of the request
  */
 void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
-    std::string uri;
-    Resource* r = nullptr;
-    ResourceHost* resHost = this->getResourceHostForRequest(req);
+    auto resHost = this->getResourceHostForRequest(req);
 
     // ResourceHost couldnt be determined or the Host specified by the client was invalid
     if (resHost == nullptr) {
@@ -516,13 +506,13 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
     }
 
     // Check if the requested resource exists
-    uri = req->getRequestUri();
-    r = resHost->getResource(uri);
+    auto uri = req->getRequestUri();
+    auto r = resHost->getResource(uri);
 
     if (r != nullptr) { // Exists
         std::cout << "[" << cl->getClientIP() << "] " << "Sending file: " << uri << std::endl;
 
-        auto resp = new HTTPResponse();
+        auto resp = std::make_unique<HTTPResponse>();
         resp->setStatus(Status(OK));
         resp->addHeader("Content-Type", r->getMimeType());
         resp->addHeader("Content-Length", r->getSize());
@@ -541,9 +531,7 @@ void HTTPServer::handleGet(Client* cl, HTTPRequest* req) {
         if (auto con_val = req->getHeaderValue("Connection"); con_val.compare("close") == 0)
             dc = true;
 
-        sendResponse(cl, resp, dc);
-        delete resp;
-        delete r;
+        sendResponse(cl, std::move(resp), dc);
     } else { // Not found
         std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
         sendStatusResponse(cl, Status(NOT_FOUND));
@@ -562,13 +550,12 @@ void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
     // For now, we'll always return the capabilities of the server instead of figuring it out for each resource
     std::string allow = "HEAD, GET, OPTIONS, TRACE";
 
-    auto resp = new HTTPResponse();
+    auto resp = std::make_unique<HTTPResponse>();
     resp->setStatus(Status(OK));
     resp->addHeader("Allow", allow);
     resp->addHeader("Content-Length", "0"); // Required
 
-    sendResponse(cl, resp, true);
-    delete resp;
+    sendResponse(cl, std::move(resp), true);
 }
 
 /**
@@ -582,21 +569,17 @@ void HTTPServer::handleOptions(Client* cl, [[maybe_unused]] HTTPRequest* req) {
 void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
     // Get a byte array representation of the request
     uint32_t len = req->size();
-    auto buf = new uint8_t[len];
-    memset(buf, 0x00, len);
+    auto buf = std::make_unique<uint8_t[]>(len);
     req->setReadPos(0); // Set the read position at the beginning since the request has already been read to the end
-    req->getBytes(buf, len);
+    req->getBytes(buf.get(), len);
 
     // Send a response with the entire request as the body
-    auto resp = new HTTPResponse();
+    auto resp = std::make_unique<HTTPResponse>();
     resp->setStatus(Status(OK));
     resp->addHeader("Content-Type", "message/http");
     resp->addHeader("Content-Length", len);
-    resp->setData(buf, len);
-    sendResponse(cl, resp, true);
-
-    delete resp;
-    delete[] buf;
+    resp->setData(buf.get(), len);
+    sendResponse(cl, std::move(resp), true);
 }
 
 /**
@@ -609,7 +592,7 @@ void HTTPServer::handleTrace(Client* cl, HTTPRequest* req) {
  * @param msg An additional message to append to the body text
  */
 void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string const& msg) {
-    auto resp = new HTTPResponse();
+    auto resp = std::make_unique<HTTPResponse>();
     resp->setStatus(status);
 
     // Body message: Reason string + additional msg
@@ -626,9 +609,7 @@ void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string cons
     resp->addHeader("Content-Length", slen);
     resp->setData(sdata, slen);
 
-    sendResponse(cl, resp, true);
-
-    delete resp;
+    sendResponse(cl, std::move(resp), true);
 }
 
 /**
@@ -639,7 +620,7 @@ void HTTPServer::sendStatusResponse(Client* cl, int32_t status, std::string cons
  * @param buf ByteBuffer containing data to be sent
  * @param disconnect Should the server disconnect the client after sending (Optional, default = false)
  */
-void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
+void HTTPServer::sendResponse(Client* cl, std::unique_ptr<HTTPResponse> resp, bool disconnect) {
     // Server Header
     resp->addHeader("Server", "httpserver/1.0");
 
@@ -662,10 +643,8 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
         resp->addHeader("Connection", "close");
 
     // Get raw data by creating the response (we are responsible for cleaning it up in process())
-    uint8_t* pData = resp->create();
-
     // Add data to the Client's send queue
-    cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
+    cl->addToSendQueue(new SendQueueItem(resp->create(), resp->size(), disconnect));
 }
 
 /**
@@ -674,9 +653,8 @@ void HTTPServer::sendResponse(Client* cl, HTTPResponse* resp, bool disconnect) {
  * 
  * @param req State of the request
  */
-ResourceHost* HTTPServer::getResourceHostForRequest(const HTTPRequest* req) {
+std::shared_ptr<ResourceHost> HTTPServer::getResourceHostForRequest(const HTTPRequest* req) {
     // Determine the appropriate vhost
-    ResourceHost* resHost = nullptr;
     std::string host = "";
 
     // Retrieve the host specified in the request (Required for HTTP/1.1 compliance)
@@ -691,13 +669,13 @@ ResourceHost* HTTPServer::getResourceHostForRequest(const HTTPRequest* req) {
         auto it = vhosts.find(host);
 
         if (it != vhosts.end())
-            resHost = it->second;
+            return it->second;
     } else {
         // Temporary: HTTP/1.0 are given the first ResouceHost in the hostList
         // TODO: Allow admin to specify a 'default resource host'
         if (!hostList.empty())
-            resHost = hostList[0];
+            return hostList[0];
     }
     
-    return resHost;
+    return nullptr;
 }

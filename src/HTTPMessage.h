@@ -20,6 +20,7 @@
 #define _HTTPMESSAGE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "ByteBuffer.h"
@@ -97,7 +98,7 @@ public:
     explicit HTTPMessage(const uint8_t* pData, uint32_t len);
     ~HTTPMessage() override = default;
 
-    virtual uint8_t* create() = 0;
+    virtual std::unique_ptr<uint8_t[]> create() = 0;
     virtual bool parse() = 0;
 
     // Create helpers

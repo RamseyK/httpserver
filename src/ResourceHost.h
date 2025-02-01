@@ -21,6 +21,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <memory>
 #include <vector>
 
 #include "Resource.h"
@@ -35,10 +36,10 @@ private:
     std::string lookupMimeType(std::string const& ext);
 
     // Read a file from the FS and into a Resource object
-    Resource* readFile(std::string const& path, struct stat const& sb);
+    std::unique_ptr<Resource> readFile(std::string const& path, struct stat const& sb);
 
     // Reads a directory list or index from FS into a Resource object
-    Resource* readDirectory(std::string path, struct stat const& sb);
+    std::unique_ptr<Resource> readDirectory(std::string path, struct stat const& sb);
 
     // Provide a string rep of the directory listing based on URI
     std::string generateDirList(std::string const& dirPath) const;
@@ -47,11 +48,8 @@ public:
     explicit ResourceHost(std::string const& base);
     ~ResourceHost() = default;
 
-    // Write a resource to the file system
-    void putResource(Resource* res, bool writeToDisk);
-
     // Returns a Resource based on URI
-    Resource* getResource(std::string const& uri);
+    std::unique_ptr<Resource> getResource(std::string const& uri);
 };
 
 #endif
