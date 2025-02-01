@@ -620,12 +620,11 @@ void HTTPServer::sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPRe
     std::string tstr;
     char tbuf[36] = {0};
     time_t rawtime;
-    struct tm* ptm = nullptr;
+    struct tm ptm = {0};
     time(&rawtime);
-    ptm = std::gmtime(&rawtime);
-    if (ptm != nullptr) {
+    if (gmtime_r(&rawtime, &ptm) != nullptr) {
         // Ex: Fri, 31 Dec 1999 23:59:59 GMT
-        strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", ptm);
+        strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", &ptm);
         tstr = tbuf;
         resp->addHeader("Date", tstr);
     }
