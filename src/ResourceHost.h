@@ -33,7 +33,7 @@ private:
 
 private:
     // Returns a MIME type string given an extension
-    std::string lookupMimeType(std::string const& ext);
+    std::string lookupMimeType(std::string const& ext) const;
 
     // Read a file from the FS and into a Resource object
     std::unique_ptr<Resource> readFile(std::string const& path, struct stat const& sb);

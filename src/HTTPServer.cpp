@@ -488,7 +488,7 @@ void HTTPServer::handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const re
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleGet(std::shared_ptr<Client> cl, HTTPRequest* const req) {
+void HTTPServer::handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const req) {
     auto resHost = this->getResourceHostForRequest(req);
 
     // ResourceHost couldnt be determined or the Host specified by the client was invalid
@@ -538,7 +538,7 @@ void HTTPServer::handleGet(std::shared_ptr<Client> cl, HTTPRequest* const req) {
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleOptions(std::shared_ptr<Client> cl, [[maybe_unused]] HTTPRequest* const req) {
+void HTTPServer::handleOptions(std::shared_ptr<Client> cl, [[maybe_unused]] const HTTPRequest* const req) {
     // For now, we'll always return the capabilities of the server instead of figuring it out for each resource
     std::string allow = "HEAD, GET, OPTIONS, TRACE";
 

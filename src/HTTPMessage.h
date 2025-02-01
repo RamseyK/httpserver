@@ -81,7 +81,7 @@ enum Status {
 
 class HTTPMessage : public ByteBuffer {
 private:
-    std::map<std::string, std::string> headers;
+    std::map<std::string, std::string, std::less<>> headers;
 
 public:
     std::string parseErrorStr = "";

@@ -33,7 +33,7 @@ const static std::vector<std::string> g_validIndexes = {
 };
 
 // Dictionary that relates file extensions to their MIME type
-const static std::unordered_map<std::string, std::string> g_mimeMap = {
+const static std::unordered_map<std::string, std::string, std::hash<std::string>, std::equal_to<>> g_mimeMap = {
 #include "MimeTypes.inc"
 };
 
@@ -47,7 +47,7 @@ ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
  * @param ext File extension to use for the lookup
  * @return MIME type as a String. If type could not be found, returns an empty string
  */
-std::string ResourceHost::lookupMimeType(std::string const& ext) {
+std::string ResourceHost::lookupMimeType(std::string const& ext) const {
     auto it = g_mimeMap.find(ext);
     if (it == g_mimeMap.end())
         return "";

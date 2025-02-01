@@ -40,7 +40,7 @@ void handleTermSig([[maybe_unused]] int32_t snum) {
 int main()
 {
     // Parse config file
-    std::map<std::string, std::string> config;
+    std::map<std::string, std::string, std::less<>> config;
     std::fstream cfile;
     std::string line;
     std::string key;

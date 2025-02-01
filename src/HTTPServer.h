@@ -56,7 +56,7 @@ class HTTPServer {
 
     // Resources / File System
     std::vector<std::shared_ptr<ResourceHost>> hostList; // Contains all ResourceHosts
-    std::unordered_map<std::string, std::shared_ptr<ResourceHost>> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
+    std::unordered_map<std::string, std::shared_ptr<ResourceHost>, std::hash<std::string>, std::equal_to<>> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
 
     // Connection processing
     void updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata);
@@ -69,8 +69,8 @@ class HTTPServer {
 
     // Request handling
     void handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const req);
-    void handleGet(std::shared_ptr<Client> cl, HTTPRequest* const req);
-    void handleOptions(std::shared_ptr<Client> cl, HTTPRequest* const req);
+    void handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const req);
+    void handleOptions(std::shared_ptr<Client> cl, const HTTPRequest* const req);
     void handleTrace(std::shared_ptr<Client> cl, HTTPRequest* const req);
 
     // Response
