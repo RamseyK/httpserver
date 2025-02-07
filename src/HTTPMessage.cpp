@@ -204,10 +204,10 @@ bool HTTPMessage::parseBody() {
         parseErrorStr = std::format("Content-Length ({}) is greater than remaining bytes ({})", hlenstr, bytesRemaining());
         return false;
     } else if (contentLen == 0) {
-        parseErrorStr = "Content-Length is zero";
-        return false;
+        // Nothing to read, which is fine
+        return true;
     } else {
-        // Otherwise, we ca probably trust Content-Length is valid and read the specificed number of bytes
+        // Otherwise, we can probably trust Content-Length is valid and read the specificed number of bytes
         dataLen = contentLen;
     }
 
