@@ -2,6 +2,10 @@ import os
 import sys
 import argparse
 
+
+# Source mime.types: https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
+
+
 def main():
     parser = argparse.ArgumentParser(description="Convert Apache's mime.types file to our MimeTypes.inc")
     parser.add_argument('-s', '--source', required=True, type=str, help='Path to source mime.types file')
