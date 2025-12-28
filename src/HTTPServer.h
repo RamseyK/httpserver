@@ -29,6 +29,8 @@
 #include <vector>
 #include <string>
 
+#include <sys/time.h>
+
 #ifdef __linux__
 #include <kqueue/sys/event.h> // libkqueue Linux - only works if libkqueue is compiled from Github sources
 #else
