@@ -38,7 +38,6 @@ const static std::unordered_map<std::string, std::string, std::hash<std::string>
 };
 
 ResourceHost::ResourceHost(std::string const& base) : baseDiskPath(base) {
-    // TODO: Check to see if the baseDiskPath is a valid path
 }
 
 /**

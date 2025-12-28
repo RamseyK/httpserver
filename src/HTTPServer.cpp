@@ -22,7 +22,7 @@
 #include <string>
 #include <ctime>
 #include <memory>
-#include <iostream>
+#include <print>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -50,8 +50,8 @@
  */
 HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t port, std::string const& diskpath, int32_t drop_uid, int32_t drop_gid) : listenPort(port), dropUid(drop_uid), dropGid(drop_gid) {
 
-    std::cout << "Port: " << port << std::endl;
-    std::cout << "Disk path: " << diskpath << std::endl;
+    std::print("Port: {}\n", port);
+    std::print("Disk path: {}\n", diskpath);
 
     // Create a resource host serving the base path ./htdocs on disk
     auto resHost = std::make_shared<ResourceHost>(diskpath);
@@ -64,11 +64,11 @@ HTTPServer::HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t po
     // Setup the resource host serving htdocs to provide for the vhost aliases
     for (auto const& vh : vhost_aliases) {
         if (vh.length() >= 122) {
-            std::cout << "vhost " << vh << " too long, skipping!" << std::endl;
+            std::print("vhost {} too long, skipping!\n", vh);
             continue;
         }
 
-        std::cout << "vhost: " << vh << std::endl;
+        std::print("vhost: {}\n", vh);
         vhosts.try_emplace(std::format("{}:{}", vh, listenPort), resHost);
     }
 }
@@ -94,7 +94,7 @@ bool HTTPServer::start() {
     // Create a handle for the listening socket, TCP
     listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (listenSocket == INVALID_SOCKET) {
-        std::cout << "Could not create socket!" << std::endl;
+        std::print("Could not create socket!\n");
         return false;
     }
 
@@ -110,36 +110,36 @@ bool HTTPServer::start() {
 
     // Bind: Assign the address to the socket
     if (bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0) {
-        std::cout << "Failed to bind to the address!" << std::endl;
+        std::print("Failed to bind to the address!\n");
         return false;
     }
 
     // Optionally drop uid/gid if specified
     if (dropUid > 0 && dropGid > 0) {
         if (setgid(dropGid) != 0) {
-            std::cout << "setgid to " << dropGid << " failed!" << std::endl;
+            std::print("setgid to {} failed!\n", dropGid);
             return false;
         }
         
         if (setuid(dropUid) != 0) {
-            std::cout << "setuid to " << dropUid << " failed!" << std::endl;
+            std::print("setuid to {} failed!\n", dropUid);
             return false;
         }
 
-        std::cout << "Successfully dropped uid to " << dropUid << " and gid to " << dropGid << std::endl;
+        std::print("Successfully dropped uid to {} and gid to {}\n", dropUid, dropGid);
     }
 
     // Listen: Put the socket in a listening state, ready to accept connections
     // Accept a backlog of the OS Maximum connections in the queue
     if (listen(listenSocket, SOMAXCONN) != 0) {
-        std::cout << "Failed to put the socket in a listening state" << std::endl;
+        std::print("Failed to put the socket in a listening state\n");
         return false;
     }
 
     // Setup kqueue
     kqfd = kqueue();
     if (kqfd == -1) {
-        std::cout << "Could not create the kernel event queue!" << std::endl;
+        std::print("Could not create the kernel event queue!\n");
         return false;
     }
 
@@ -147,7 +147,7 @@ bool HTTPServer::start() {
     updateEvent(listenSocket, EVFILT_READ, EV_ADD, 0, 0, NULL);
 
     canRun = true;
-    std::cout << "Server ready. Listening on port " << listenPort << "..." << std::endl;
+    std::print("Server ready. Listening on port {}...\n", listenPort);
     return true;
 }
 
@@ -180,7 +180,7 @@ void HTTPServer::stop() {
         kqfd = -1;
     }
 
-    std::cout << "Server shutdown!" << std::endl;
+    std::print("Server shutdown!\n");
 }
 
 /**
@@ -222,7 +222,7 @@ void HTTPServer::process() {
             // Client descriptor has triggered an event
             auto cl = getClient(evList[i].ident); // ident contains the clients socket descriptor
             if (cl == nullptr) {
-                std::cout << "Could not find client" << std::endl;
+                std::print("Could not find client\n");
                 // Remove socket events from kqueue
                 updateEvent(evList[i].ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
                 updateEvent(evList[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
@@ -240,7 +240,7 @@ void HTTPServer::process() {
             }
 
             if (evList[i].filter == EVFILT_READ) {
-                // std::cout << "read filter " << evList[i].data << " bytes available" << std::endl;
+                // std::print("read filter {} bytes available\n", evList[i].data);
                 // Read and process any pending data on the wire
                 readClient(cl, evList[i].data); // data contains the number of bytes waiting to be read
 
@@ -248,10 +248,10 @@ void HTTPServer::process() {
                 updateEvent(evList[i].ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
                 updateEvent(evList[i].ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
             } else if (evList[i].filter == EVFILT_WRITE) {
-                // std::cout << "write filter with " << evList[i].data << " bytes available" << std::endl;
+                // std::print("write filter with {} bytes available\n", evList[i].data);
                 // Write any pending data to the client - writeClient returns true if there is additional data to send in the client queue
                 if (!writeClient(cl, evList[i].data)) { // data contains number of bytes that can be written
-                    // std::cout << "switch back to read filter" << std::endl;
+                    // std::print("switch back to read filter\n");
                     // If theres nothing more to send, Have kqueue disable tracking of WRITE events and enable tracking of READ events
                     updateEvent(evList[i].ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
                     updateEvent(evList[i].ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
@@ -286,7 +286,7 @@ void HTTPServer::acceptConnection() {
 
     // Add the client object to the client map
     auto cl = std::make_unique<Client>(clfd, clientAddr);
-    std::cout << "[" << cl->getClientIP() << "] connected" << std::endl;
+    std::print("[{}] connected\n", cl->getClientIP());
     clientMap.try_emplace(clfd, std::move(cl));
 }
 
@@ -320,7 +320,7 @@ void HTTPServer::disconnectClient(std::shared_ptr<Client> cl, bool mapErase) {
     if (cl == nullptr)
         return;
 
-    std::cout << "[" << cl->getClientIP() << "] disconnected" << std::endl;
+    std::print("[{}] disconnected\n", cl->getClientIP());
 
     // Remove socket events from kqueue
     updateEvent(cl->getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
@@ -360,7 +360,7 @@ void HTTPServer::readClient(std::shared_ptr<Client> cl, int32_t data_len) {
     // Determine state of the client socket and act on it
     if (lenRecv == 0) {
         // Client closed the connection
-        std::cout << "[" << cl->getClientIP() << "] has opted to close the connection" << std::endl;
+        std::print("[{}] has opted to close the connection\n", cl->getClientIP());
         disconnectClient(cl, true);
     } else if (lenRecv < 0) {
         // Something went wrong with the connection
@@ -423,7 +423,7 @@ bool HTTPServer::writeClient(std::shared_ptr<Client> cl, int32_t avail_bytes) {
     else
         disconnect = true;
 
-    // std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
+    // std::print("[{}] was sent {} bytes\n", cl->getClientIP(), actual_sent);
 
     // SendQueueItem isnt needed anymore. Dequeue and delete
     if (item->getOffset() >= item->getSize())
@@ -449,18 +449,18 @@ void HTTPServer::handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const re
     // Parse the request
     // If there's an error, report it and send a server error in response
     if (!req->parse()) {
-        std::cout << "[" << cl->getClientIP() << "] There was an error processing the request of type: " << req->methodIntToStr(req->getMethod()) << std::endl;
-        std::cout << req->getParseError() << std::endl;
+        std::print("[{}] There was an error processing the request of type: {}\n", cl->getClientIP(), req->methodIntToStr(req->getMethod()));
+        std::print("{}\n", req->getParseError());
         sendStatusResponse(cl, Status(BAD_REQUEST));
         return;
     }
 
-    std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " " << req->getRequestUri() << std::endl;
-    /*std::cout << "Headers:" << std::endl;
+    std::print("[{}] {} {}\n", cl->getClientIP(), req->methodIntToStr(req->getMethod()), req->getRequestUri());
+    /*std::print("Headers:\n");
     for (uint32_t i = 0; i < req->getNumHeaders(); i++) {
-        std::cout << "\t" << req->getHeaderStr(i) << std::endl;
+        std::print("\t{}\n", req->getHeaderStr(i));
     }
-    std::cout << std::endl;*/
+    std::print("\n");*/
 
     // Send the request to the correct handler function
     switch (req->getMethod()) {
@@ -475,7 +475,7 @@ void HTTPServer::handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const re
         handleTrace(cl, req);
         break;
     default:
-        std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
+        std::print("[{}] Could not handle or determine request of type {}\n", cl->getClientIP(), req->methodIntToStr(req->getMethod()));
         sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
         break;
     }
@@ -502,7 +502,7 @@ void HTTPServer::handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const 
     auto r = resHost->getResource(uri);
 
     if (r != nullptr) { // Exists
-        std::cout << "[" << cl->getClientIP() << "] " << "Sending file: " << uri << std::endl;
+        std::print("[{}] Sending file: {}\n", cl->getClientIP(), uri);
 
         auto resp = std::make_unique<HTTPResponse>();
         resp->setStatus(Status(OK));
@@ -525,7 +525,7 @@ void HTTPServer::handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const 
 
         sendResponse(cl, std::move(resp), dc);
     } else { // Not found
-        std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
+        std::print("[{}] File not found: {}\n", cl->getClientIP(), uri);
         sendStatusResponse(cl, Status(NOT_FOUND));
     }
 }

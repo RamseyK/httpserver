@@ -20,8 +20,9 @@
 
 #include <string>
 #include <format>
-#include <iostream>
 #include <memory>
+#include <print>
+
 
 HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
 }
@@ -241,7 +242,7 @@ bool HTTPMessage::parseBody() {
 void HTTPMessage::addHeader(std::string const& line) {
     size_t kpos = line.find(':');
     if (kpos == std::string::npos) {
-        std::cout << "Could not addHeader: " << line << std::endl;
+        std::print("Could not addHeader: {}\n", line);
         return;
     }
     // We're choosing to reject HTTP Header keys longer than 32 characters

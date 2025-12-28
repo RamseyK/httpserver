@@ -19,9 +19,10 @@
 #include "HTTPMessage.h"
 #include "HTTPRequest.h"
 
-#include <iostream>
 #include <format>
 #include <memory>
+#include <print>
+
 
 HTTPRequest::HTTPRequest() : HTTPMessage() {
 }
@@ -83,7 +84,7 @@ std::unique_ptr<uint8_t[]> HTTPRequest::create() {
     std::string mstr = "";
     mstr = methodIntToStr(method);
     if (mstr.empty()) {
-        std::cout << "Could not create HTTPRequest, unknown method id: " << method << std::endl;
+        std::print("Could not create HTTPRequest, unknown method id: {}\n", method);
         return nullptr;
     }
     putLine(std::format("{} {} {}", mstr, requestUri, version));

@@ -16,11 +16,12 @@
     limitations under the License.
 */
 
-#include <iostream>
+#include <print>
 #include <string>
 #include <unordered_map>
 #include <fstream>
 #include <signal.h>
+#include <sys/stat.h>
 
 #include "HTTPServer.h"
 #include "ResourceHost.h"
@@ -46,11 +47,9 @@ int main()
     std::string key;
     std::string val;
     int32_t epos = 0;
-    int32_t drop_uid = 0;
-    int32_t drop_gid = 0;
     cfile.open("server.config");
     if (!cfile.is_open()) {
-        std::cout << "Unable to open server.config file in working directory" << std::endl;
+        std::print("Unable to open server.config file in working directory\n");
         return -1;
     }
     while (getline(cfile, line)) {
@@ -67,7 +66,13 @@ int main()
 
     // Validate at least vhost, port, and diskpath are present
     if (!config.contains("vhost") || !config.contains("port") || !config.contains("diskpath")) {
-        std::cout << "vhost, port, and diskpath must be supplied in the config, at a minimum" << std::endl;
+        std::print("vhost, port, and diskpath must be supplied in the config, at a minimum\n");
+        return -1;
+    }
+
+    struct stat sb = {0};
+    if (stat(config["diskpath"].c_str(), &sb) != 0) {
+        std::print("diskpath must exist: {}\n", config["diskpath"]);
         return -1;
     }
 
@@ -85,6 +90,8 @@ int main()
     } while (pos != std::string::npos);
 
     // Check for optional drop_uid, drop_gid.  Ensure both are set
+    int32_t drop_uid = 0;
+    int32_t drop_gid = 0;
     if (config.contains("drop_uid") && config.contains("drop_gid")) {
         drop_uid = atoi(config["drop_uid"].c_str());
         drop_gid = atoi(config["drop_gid"].c_str());
