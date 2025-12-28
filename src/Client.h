@@ -32,7 +32,7 @@ class Client {
     std::queue<SendQueueItem*> sendQueue;
 
 public:
-    Client(int fd, sockaddr_in addr);
+    Client(int32_t fd, sockaddr_in addr);
     ~Client();
     Client& operator=(Client const&) = delete;  // Copy assignment
     Client(Client &&) = delete;  // Move

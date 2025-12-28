@@ -18,7 +18,7 @@
 
 #include "Client.h"
 
-Client::Client(int fd, sockaddr_in addr) : socketDesc(fd), clientAddr(addr) {
+Client::Client(int32_t fd, sockaddr_in addr) : socketDesc(fd), clientAddr(addr) {
 }
 
 Client::~Client() {

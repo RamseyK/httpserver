@@ -59,9 +59,9 @@ class HTTPServer {
     std::unordered_map<std::string, std::shared_ptr<ResourceHost>, std::hash<std::string>, std::equal_to<>> vhosts; // Virtual hosts. Maps a host string to a ResourceHost to service the request
 
     // Connection processing
-    void updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata);
+    void updateEvent(int32_t ident, int16_t filter, uint16_t flags, uint32_t fflags, int32_t data, void* udata);
     void acceptConnection();
-    std::shared_ptr<Client> getClient(int clfd);
+    std::shared_ptr<Client> getClient(int32_t clfd);
     void disconnectClient(std::shared_ptr<Client> cl, bool mapErase = true);
     void readClient(std::shared_ptr<Client> cl, int32_t data_len); // Client read event
     bool writeClient(std::shared_ptr<Client> cl, int32_t avail_bytes); // Client write event

@@ -188,7 +188,7 @@ void HTTPServer::stop() {
  * Update the kqueue by creating the appropriate kevent structure
  * See kqueue documentation for parameter descriptions
  */
-void HTTPServer::updateEvent(int ident, short filter, u_short flags, u_int fflags, int32_t data, void* udata) {
+void HTTPServer::updateEvent(int32_t ident, int16_t filter, uint16_t flags, uint32_t fflags, int32_t data, void* udata) {
     struct kevent kev;
     EV_SET(&kev, ident, filter, flags, fflags, data, udata);
     kevent(kqfd, &kev, 1, NULL, 0, NULL);
@@ -297,7 +297,7 @@ void HTTPServer::acceptConnection() {
  * @param clfd Client socket descriptor
  * @return Pointer to Client object if found. NULL otherwise
  */
-std::shared_ptr<Client> HTTPServer::getClient(int clfd) {
+std::shared_ptr<Client> HTTPServer::getClient(int32_t clfd) {
     auto it = clientMap.find(clfd);
 
     // Client wasn't found
