@@ -70,8 +70,7 @@ int main()
         return -1;
     }
 
-    struct stat sb = {0};
-    if (stat(config["diskpath"].c_str(), &sb) != 0) {
+    if (struct stat sb = {0}; stat(config["diskpath"].c_str(), &sb) != 0) {
         std::print("diskpath must exist: {}\n", config["diskpath"]);
         return -1;
     }

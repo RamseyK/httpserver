@@ -6,3 +6,4 @@ build/
 bin/htdocs/*
 
 *.o
+*.o.tmp

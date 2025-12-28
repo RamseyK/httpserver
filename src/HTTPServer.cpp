@@ -18,6 +18,7 @@
 
 #include "HTTPServer.h"
 
+#include <array>
 #include <vector>
 #include <string>
 #include <ctime>
@@ -211,7 +212,7 @@ void HTTPServer::process() {
             continue;
 
         // Loop through only the sockets that have changed in the evList array
-        for (int i = 0; i < nev; i++) {
+        for (int32_t i = 0; i < nev; i++) {
 
             // A client is waiting to connect
             if (evList[i].ident == (uint32_t)listenSocket) {
@@ -616,17 +617,15 @@ void HTTPServer::sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPRe
     // Server Header
     resp->addHeader("Server", "httpserver/1.0");
 
-    // Time stamp the response with the Date header
-    std::string tstr;
-    char tbuf[36] = {0};
+    // Timestamp the response with the Date header
+    std::array<char, 36> tbuf = {};
     time_t rawtime;
     struct tm ptm = {0};
     time(&rawtime);
     if (gmtime_r(&rawtime, &ptm) != nullptr) {
         // Ex: Fri, 31 Dec 1999 23:59:59 GMT
-        strftime(tbuf, 36, "%a, %d %b %Y %H:%M:%S GMT", &ptm);
-        tstr = tbuf;
-        resp->addHeader("Date", tstr);
+        strftime(tbuf.data(), 36, "%a, %d %b %Y %H:%M:%S GMT", &ptm);
+        resp->addHeader("Date", std::string(tbuf.data()));
     }
 
     // Include a Connection: close header if this is the final response sent by the server

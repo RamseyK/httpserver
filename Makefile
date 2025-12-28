@@ -6,16 +6,22 @@ CLANG_FORMAT = clang-format
 LDFLAGS ?=
 CXXFLAGS ?=
 CXX = clang++
+ARCH := $(shell uname -m)
 
 CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers \
 			-Wformat -Wformat=2 -Wimplicit-fallthrough \
-			-march=x86-64-v2 -fPIE \
+			-fPIE \
 			-fexceptions \
 			-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer \
 			-fno-delete-null-pointer-checks -fno-strict-aliasing \
 			-pedantic -std=c++23
 
-LDFLAGS += -fuse-ld=lld
+ifeq ($(ARCH),amd64)
+	CXXFLAGS += -march=x86-64-v2
+endif
+ifeq ($(ARCH),x86_64)
+	CXXFLAGS += -march=x86-64-v2
+endif
 
 ifeq ($(DEBUG),1)
 CXXFLAGS += -O1 -g -DDEBUG=1 \

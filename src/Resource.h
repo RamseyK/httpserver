@@ -31,7 +31,7 @@ private:
     bool directory;
 
 public:
-    Resource(std::string const& loc, bool dir = false);
+    explicit Resource(std::string const& loc, bool dir = false);
     ~Resource();
 
     // Setters
