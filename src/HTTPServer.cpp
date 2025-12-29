@@ -206,7 +206,7 @@ void HTTPServer::process() {
     while (canRun) {
         // Get a list of changed socket descriptors with a read event triggered in evList
         // Timeout set in the header
-        nev = kevent(kqfd, NULL, 0, evList, QUEUE_SIZE, &kqTimeout);
+        nev = kevent(kqfd, NULL, 0, evList.data(), QUEUE_SIZE, &kqTimeout);
 
         if (nev <= 0)
             continue;

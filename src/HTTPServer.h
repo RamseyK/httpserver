@@ -24,6 +24,7 @@
 #include "HTTPResponse.h"
 #include "ResourceHost.h"
 
+#include <array>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -51,7 +52,7 @@ class HTTPServer {
     // Kqueue
     struct timespec kqTimeout = {2, 0}; // Block for 2 seconds and 0ns at the most
     int32_t kqfd = -1; // kqueue descriptor
-    struct kevent evList[QUEUE_SIZE]; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
+    std::array<struct kevent, QUEUE_SIZE> evList; // Events that have triggered a filter in the kqueue (max QUEUE_SIZE at a time)
 
     // Client map, maps Socket descriptor to Client object
     std::unordered_map<int, std::shared_ptr<Client>> clientMap;
