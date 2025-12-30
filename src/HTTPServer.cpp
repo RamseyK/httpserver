@@ -369,9 +369,8 @@ void HTTPServer::readClient(std::shared_ptr<Client> cl, int32_t data_len) {
         disconnectClient(cl, true);
     } else {
         // Data received: Place the data in an HTTPRequest and pass it to handleRequest for processing
-        auto req = new HTTPRequest(pData.get(), lenRecv);
-        handleRequest(cl, req);
-        delete req;
+        auto req = std::make_unique<HTTPRequest>(pData.get(), lenRecv);
+        handleRequest(cl, std::move(req));
     }
 }
 
@@ -446,7 +445,7 @@ bool HTTPServer::writeClient(std::shared_ptr<Client> cl, int32_t avail_bytes) {
  * @param cl Client object where request originated from
  * @param req HTTPRequest object filled with raw packet data
  */
-void HTTPServer::handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const req) {
+void HTTPServer::handleRequest(std::shared_ptr<Client> cl, std::shared_ptr<HTTPRequest> req) {
     // Parse the request
     // If there's an error, report it and send a server error in response
     if (!req->parse()) {
@@ -489,7 +488,7 @@ void HTTPServer::handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const re
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const req) {
+void HTTPServer::handleGet(std::shared_ptr<Client> cl, const std::shared_ptr<HTTPRequest> req) {
     auto resHost = this->getResourceHostForRequest(req);
 
     // ResourceHost couldnt be determined or the Host specified by the client was invalid
@@ -539,7 +538,7 @@ void HTTPServer::handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const 
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleOptions(std::shared_ptr<Client> cl, [[maybe_unused]] const HTTPRequest* const req) {
+void HTTPServer::handleOptions(std::shared_ptr<Client> cl, [[maybe_unused]] const std::shared_ptr<HTTPRequest> req) {
     // For now, we'll always return the capabilities of the server instead of figuring it out for each resource
     std::string allow = "HEAD, GET, OPTIONS, TRACE";
 
@@ -559,7 +558,7 @@ void HTTPServer::handleOptions(std::shared_ptr<Client> cl, [[maybe_unused]] cons
  * @param cl Client requesting the resource
  * @param req State of the request
  */
-void HTTPServer::handleTrace(std::shared_ptr<Client> cl, HTTPRequest* const req) {
+void HTTPServer::handleTrace(std::shared_ptr<Client> cl, std::shared_ptr<HTTPRequest> req) {
     // Get a byte array representation of the request
     uint32_t len = req->size();
     auto buf = std::make_unique<uint8_t[]>(len);
@@ -643,7 +642,7 @@ void HTTPServer::sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPRe
  * 
  * @param req State of the request
  */
-std::shared_ptr<ResourceHost> HTTPServer::getResourceHostForRequest(const HTTPRequest* const req) {
+std::shared_ptr<ResourceHost> HTTPServer::getResourceHostForRequest(const std::shared_ptr<HTTPRequest> req) {
     // Determine the appropriate vhost
     std::string host = "";
 

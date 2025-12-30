@@ -68,13 +68,13 @@ class HTTPServer {
     void disconnectClient(std::shared_ptr<Client> cl, bool mapErase = true);
     void readClient(std::shared_ptr<Client> cl, int32_t data_len); // Client read event
     bool writeClient(std::shared_ptr<Client> cl, int32_t avail_bytes); // Client write event
-    std::shared_ptr<ResourceHost> getResourceHostForRequest(const HTTPRequest* const req);
+    std::shared_ptr<ResourceHost> getResourceHostForRequest(const std::shared_ptr<HTTPRequest> req);
 
     // Request handling
-    void handleRequest(std::shared_ptr<Client> cl, HTTPRequest* const req);
-    void handleGet(std::shared_ptr<Client> cl, const HTTPRequest* const req);
-    void handleOptions(std::shared_ptr<Client> cl, const HTTPRequest* const req);
-    void handleTrace(std::shared_ptr<Client> cl, HTTPRequest* const req);
+    void handleRequest(std::shared_ptr<Client> cl, std::shared_ptr<HTTPRequest> req);
+    void handleGet(std::shared_ptr<Client> cl, const std::shared_ptr<HTTPRequest> req);
+    void handleOptions(std::shared_ptr<Client> cl, const std::shared_ptr<HTTPRequest> req);
+    void handleTrace(std::shared_ptr<Client> cl, std::shared_ptr<HTTPRequest> req);
 
     // Response
     void sendStatusResponse(std::shared_ptr<Client> cl, int32_t status, std::string const& msg = "");
