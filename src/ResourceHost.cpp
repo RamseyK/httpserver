@@ -69,8 +69,8 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
         return nullptr;
 
     // Create a new Resource object and setup it's contents
-    auto res = std::make_unique<Resource>(path);
-    std::string name = res->getName();
+    auto resource = std::make_unique<Resource>(path);
+    std::string name = resource->getName();
     if (name.length() == 0) {
         return nullptr;  // Malformed name
     }
@@ -101,15 +101,15 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
     // Close the file
     file.close();
 
-    if (auto mimetype = lookupMimeType(res->getExtension()); mimetype.length() != 0) {
-        res->setMimeType(mimetype);
+    if (auto mimetype = lookupMimeType(resource->getExtension()); mimetype.length() != 0) {
+        resource->setMimeType(mimetype);
     } else {
-        res->setMimeType("application/octet-stream");  // default to binary
+        resource->setMimeType("application/octet-stream");  // default to binary
     }
 
-    res->setData(fdata, len);
+    resource->setData(fdata, len);
 
-    return res;
+    return resource;
 }
 
 /**
@@ -149,11 +149,11 @@ std::unique_ptr<Resource> ResourceHost::readDirectory(std::string path, struct s
     memset(sdata, 0x00, slen);
     strncpy((char*)sdata, listing.c_str(), slen);
 
-    auto res = std::make_unique<Resource>(path, true);
-    res->setMimeType("text/html");
-    res->setData(sdata, slen);
+    auto resource = std::make_unique<Resource>(path, true);
+    resource->setMimeType("text/html");
+    resource->setData(sdata, slen);
 
-    return res;
+    return resource;
 }
 
 /**

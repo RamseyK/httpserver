@@ -499,19 +499,19 @@ void HTTPServer::handleGet(std::shared_ptr<Client> cl, const std::shared_ptr<HTT
 
     // Check if the requested resource exists
     auto uri = req->getRequestUri();
-    auto r = resHost->getResource(uri);
+    auto resource = resHost->getResource(uri);
 
-    if (r != nullptr) { // Exists
+    if (resource != nullptr) { // Exists
         std::print("[{}] Sending file: {}\n", cl->getClientIP(), uri);
 
         auto resp = std::make_unique<HTTPResponse>();
         resp->setStatus(Status(OK));
-        resp->addHeader("Content-Type", r->getMimeType());
-        resp->addHeader("Content-Length", r->getSize());
+        resp->addHeader("Content-Type", resource->getMimeType());
+        resp->addHeader("Content-Length", resource->getSize());
 
         // Only send a message body if it's a GET request. Never send a body for HEAD
         if (req->getMethod() == Method(GET))
-            resp->setData(r->getData(), r->getSize());
+            resp->setData(resource->getData(), resource->getSize());
 
         bool dc = false;
 
