@@ -189,23 +189,23 @@ void HTTPMessage::parseHeaders() {
 bool HTTPMessage::parseBody() {
     // Content-Length should exist (size of the Body data) if there is body data
     std::string hlenstr = "";
-    uint32_t contentLen = 0;
     hlenstr = getHeaderValue("Content-Length");
 
     // No body data to read:
     if (hlenstr.empty())
         return true;
 
-    contentLen = atoi(hlenstr.c_str());
+    uint32_t remainingLen = bytesRemaining();
+    uint32_t contentLen = atoi(hlenstr.c_str());
 
     // contentLen should NOT exceed the remaining number of bytes in the buffer
     // Add 1 to bytesRemaining so it includes the byte at the current read position
-    if (contentLen > bytesRemaining() + 1) {
-        // If it exceeds, read only up to the number of bytes remaining
-        // dataLen = bytesRemaining();
-
+    if (contentLen > remainingLen + 1) {
         // If it exceeds, there's a potential security issue and we can't reliably parse
-        parseErrorStr = std::format("Content-Length ({}) is greater than remaining bytes ({})", hlenstr, bytesRemaining());
+        parseErrorStr = std::format("Content-Length ({}) is greater than remaining bytes ({})", hlenstr, remainingLen);
+        return false;
+    } else if (remainingLen > contentLen) {
+        parseErrorStr = std::format("ByteBuffer remaining size to read ({}) is greater than provided Content-Length {}", remainingLen, contentLen);
         return false;
     } else if (contentLen == 0) {
         // Nothing to read, which is fine
@@ -216,17 +216,11 @@ bool HTTPMessage::parseBody() {
     }
 
     // Create a big enough buffer to store the data
-    uint32_t dIdx = 0;
-    uint32_t s = size();
-    if (s > this->dataLen) {
-        parseErrorStr = std::format("ByteBuffer size of {} is greater than dataLen {}", s, this->dataLen);
-        return false;
-    }
-
     this->data = new uint8_t[this->dataLen];
 
     // Grab all the bytes from the current position to the end
-    for (uint32_t i = getReadPos(); i < s; i++) {
+    uint32_t dIdx = 0;
+    for (uint32_t i = getReadPos(); i < remainingLen; i++) {
         this->data[dIdx] = get(i);
         dIdx++;
     }
