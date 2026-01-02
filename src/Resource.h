@@ -33,6 +33,9 @@ private:
 public:
     explicit Resource(std::string const& loc, bool dir = false);
     ~Resource();
+    Resource& operator=(Resource const&) = delete;  // Copy assignment
+    Resource(Resource &&) = delete;  // Move
+    Resource& operator=(Resource &&) = delete;  // Move assignment
 
     // Setters
 

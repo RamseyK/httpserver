@@ -29,7 +29,7 @@ Client::~Client() {
  * Add to Send Queue
  * Adds a SendQueueItem object to the end of this client's send queue
  */
-void Client::addToSendQueue(SendQueueItem* item) {
+void Client::addToSendQueue(std::shared_ptr<SendQueueItem> item) {
     sendQueue.push(item);
 }
 
@@ -49,7 +49,7 @@ uint32_t Client::sendQueueSize() const {
  *
  * @return SendQueueItem object containing the data to send and current offset
  */
-SendQueueItem* Client::nextInSendQueue() {
+std::shared_ptr<SendQueueItem> Client::nextInSendQueue() {
     if (sendQueue.empty())
         return nullptr;
 
@@ -61,10 +61,10 @@ SendQueueItem* Client::nextInSendQueue() {
  * Deletes and dequeues first item in the queue
  */
 void Client::dequeueFromSendQueue() {
-    SendQueueItem* item = nextInSendQueue();
+    std::shared_ptr<SendQueueItem> item = nextInSendQueue();
     if (item != nullptr) {
+        item.reset();
         sendQueue.pop();
-        delete item;
     }
 }
 
@@ -74,7 +74,7 @@ void Client::dequeueFromSendQueue() {
  */
 void Client::clearSendQueue() {
     while (!sendQueue.empty()) {
-        delete sendQueue.front();
+        sendQueue.front().reset();
         sendQueue.pop();
     }
 }

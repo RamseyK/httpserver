@@ -25,6 +25,7 @@
 #include <memory>
 #include <print>
 #include <vector>
+#include <utility>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -629,7 +630,7 @@ void HTTPServer::sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPRe
 
     // Get raw data by creating the response (we are responsible for cleaning it up in process())
     // Add data to the Client's send queue
-    cl->addToSendQueue(new SendQueueItem(resp->create(), resp->size(), disconnect));
+    cl->addToSendQueue(std::make_shared<SendQueueItem>(resp->create(), resp->size(), disconnect));
 }
 
 /**
@@ -657,7 +658,6 @@ std::shared_ptr<ResourceHost> HTTPServer::getResourceHostForRequest(const std::s
             return it->second;
     } else {
         // Temporary: HTTP/1.0 are given the first ResouceHost in the hostList
-        // TODO: Allow admin to specify a 'default resource host'
         if (!hostList.empty())
             return hostList[0];
     }

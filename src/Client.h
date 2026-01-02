@@ -21,6 +21,8 @@
 
 #include "SendQueueItem.h"
 
+#include <memory>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <queue>
@@ -29,7 +31,7 @@ class Client {
     int32_t socketDesc; // Socket Descriptor
     sockaddr_in clientAddr;
 
-    std::queue<SendQueueItem*> sendQueue;
+    std::queue<std::shared_ptr<SendQueueItem>> sendQueue;
 
 public:
     Client(int32_t fd, sockaddr_in addr);
@@ -50,9 +52,9 @@ public:
         return inet_ntoa(clientAddr.sin_addr);
     }
 
-    void addToSendQueue(SendQueueItem* item);
+    void addToSendQueue(std::shared_ptr<SendQueueItem> item);
     uint32_t sendQueueSize() const;
-    SendQueueItem* nextInSendQueue();
+    std::shared_ptr<SendQueueItem> nextInSendQueue();
     void dequeueFromSendQueue();
     void clearSendQueue();
 };
