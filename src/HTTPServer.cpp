@@ -19,14 +19,15 @@
 #include "HTTPServer.h"
 
 #include <array>
-#include <vector>
+#include <chrono>
 #include <string>
-#include <ctime>
+#include <format>
 #include <memory>
 #include <print>
+#include <vector>
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -616,16 +617,11 @@ void HTTPServer::sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPRe
     // Server Header
     resp->addHeader("Server", "httpserver/1.0");
 
-    // Timestamp the response with the Date header
-    std::array<char, 36> tbuf = {};
-    time_t rawtime;
-    struct tm ptm = {0};
-    time(&rawtime);
-    if (gmtime_r(&rawtime, &ptm) != nullptr) {
-        // Ex: Fri, 31 Dec 1999 23:59:59 GMT
-        strftime(tbuf.data(), 36, "%a, %d %b %Y %H:%M:%S GMT", &ptm);
-        resp->addHeader("Date", std::string(tbuf.data()));
-    }
+    // Timestamp the response with the Date header casted to seconds precision
+    const auto now_utc = std::chrono::system_clock::now();
+    const auto now_seconds = std::chrono::time_point_cast<std::chrono::seconds>(now_utc);
+    // Ex: Fri, 31 Dec 1999 23:59:59 GMT
+    resp->addHeader("Date", std::format("{:%a, %d %b %Y %H:%M:%S GMT}", now_seconds));
 
     // Include a Connection: close header if this is the final response sent by the server
     if (disconnect)

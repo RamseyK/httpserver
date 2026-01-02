@@ -18,10 +18,13 @@
 
 #include "HTTPMessage.h"
 
+#include <algorithm>
 #include <string>
 #include <format>
 #include <memory>
 #include <print>
+
+#include <cctype>  // to std::tolower
 
 
 HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
@@ -305,19 +308,15 @@ void HTTPMessage::addHeader(std::string const& key, int32_t value) {
  */
 std::string HTTPMessage::getHeaderValue(std::string const& key) const {
 
-    char c = 0;
-    std::string key_lower = "";
-
     // Lookup in map
     auto it = headers.find(key);
 
     // Key wasn't found, try an all lowercase variant as some clients won't always use proper capitalization
     if (it == headers.end()) {
 
-        for (uint32_t i = 0; i < key.length(); i++) {
-            c = key.at(i);
-            key_lower += tolower(c);
-        }
+        std::string key_lower = std::string(key);
+        std::transform(key_lower.begin(), key_lower.end(), key_lower.begin(),
+            [](unsigned char c){ return std::tolower(c); });
 
         // Still not found, return empty string to indicate the Header value doesnt exist
         it = headers.find(key_lower);
