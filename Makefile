@@ -53,4 +53,7 @@ debug:
 asan:
 	CXXFLAGS=-fsanitize=address DEBUG=1 $(MAKE) all
 
-.PHONY: all make-src clean debug asan
+bench:
+	wrk -t12 -c400 -d30s http://localhost:8080
+
+.PHONY: all make-src clean debug asan bench

@@ -32,4 +32,4 @@ Server ready. Listening on port 8080...
 ```
 
 ## License
-See LICENSE.TXT
+Apache License v2.0. See LICENSE file.

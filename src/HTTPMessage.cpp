@@ -212,22 +212,22 @@ bool HTTPMessage::parseBody() {
         return true;
     } else {
         // Otherwise, we can probably trust Content-Length is valid and read the specificed number of bytes
-        dataLen = contentLen;
+        this->dataLen = contentLen;
     }
 
     // Create a big enough buffer to store the data
     uint32_t dIdx = 0;
     uint32_t s = size();
-    if (s > dataLen) {
-        parseErrorStr = std::format("ByteBuffer size of {} is greater than dataLen {}", s, dataLen);
+    if (s > this->dataLen) {
+        parseErrorStr = std::format("ByteBuffer size of {} is greater than dataLen {}", s, this->dataLen);
         return false;
     }
 
-    data = new uint8_t[dataLen];
+    this->data = new uint8_t[this->dataLen];
 
     // Grab all the bytes from the current position to the end
     for (uint32_t i = getReadPos(); i < s; i++) {
-        data[dIdx] = get(i);
+        this->data[dIdx] = get(i);
         dIdx++;
     }
 
@@ -314,8 +314,8 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) const {
     // Key wasn't found, try an all lowercase variant as some clients won't always use proper capitalization
     if (it == headers.end()) {
 
-        std::string key_lower = std::string(key);
-        std::transform(key_lower.begin(), key_lower.end(), key_lower.begin(),
+        auto key_lower = std::string(key);
+        std::ranges::transform(key_lower.begin(), key_lower.end(), key_lower.begin(),
             [](unsigned char c){ return std::tolower(c); });
 
         // Still not found, return empty string to indicate the Header value doesnt exist
