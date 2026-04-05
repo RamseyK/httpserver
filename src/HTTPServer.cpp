@@ -18,8 +18,6 @@
 
 #include "HTTPServer.h"
 
-#include <array>
-#include <cerrno>
 #include <chrono>
 #include <string>
 #include <format>

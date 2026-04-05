@@ -22,13 +22,11 @@
 #include <print>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <fstream>
 #include <csignal>
 #include <sys/stat.h>
 
 #include "HTTPServer.h"
-#include "ResourceHost.h"
 
 static std::unique_ptr<HTTPServer> svr;
 

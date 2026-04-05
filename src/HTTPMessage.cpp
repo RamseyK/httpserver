@@ -23,7 +23,6 @@
 #include <format>
 #include <memory>
 #include <print>
-#include <ranges>
 
 #include <cctype>  // to std::tolower
 #include <charconv>

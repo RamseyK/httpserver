@@ -18,9 +18,12 @@
 
 #include "ResourceHost.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>

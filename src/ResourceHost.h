@@ -19,11 +19,9 @@
 #ifndef _RESOURCEHOST_H_
 #define _RESOURCEHOST_H_
 
+#include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
-#include <memory>
-#include <vector>
 
 #include "Resource.h"
 
