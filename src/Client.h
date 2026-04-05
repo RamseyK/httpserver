@@ -50,7 +50,7 @@ public:
     }
 
     std::string getClientIP() const {
-        char buf[INET_ADDRSTRLEN];
+        char buf[INET_ADDRSTRLEN] = {0};
         inet_ntop(AF_INET, &clientAddr.sin_addr, buf, sizeof(buf));
         return buf;
     }

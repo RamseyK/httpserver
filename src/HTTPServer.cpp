@@ -206,9 +206,6 @@ void HTTPServer::updateEvent(int32_t ident, int16_t filter, uint16_t flags, uint
     struct kevent kev;
     EV_SET(&kev, ident, filter, flags, fflags, data, udata);
     kevent(kqfd, &kev, 1, NULL, 0, NULL);
-    // if (kevent(kqfd, &kev, 1, NULL, 0, NULL) == -1) {
-    //     std::print("kevent failed for fd {} filter {} flags {}: errno {}\n", ident, filter, flags, errno);
-    // }
 }
 
 /**

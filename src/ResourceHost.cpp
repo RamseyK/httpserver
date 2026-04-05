@@ -101,7 +101,7 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
     constexpr off_t MAX_FILE_SIZE = 256 * 1024 * 1024;
     if (sb.st_size < 0 || sb.st_size > MAX_FILE_SIZE)
         return nullptr;
-    uint32_t len = static_cast<uint32_t>(sb.st_size);
+    auto len = static_cast<uint32_t>(sb.st_size);
 
     std::ifstream file;
 
