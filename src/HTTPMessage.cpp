@@ -23,8 +23,10 @@
 #include <format>
 #include <memory>
 #include <print>
+#include <ranges>
 
 #include <cctype>  // to std::tolower
+#include <charconv>
 
 
 HTTPMessage::HTTPMessage() : ByteBuffer(4096) {
@@ -136,19 +138,19 @@ std::string HTTPMessage::getStrElement(char delim) {
     if (startPos > endPos)
         return "";
 
-    // Calculate the size based on the found ending position
-    uint32_t size = (endPos + 1) - startPos;
-    if (size <= 0)
+    // Token spans [startPos, endPos); delimiter sits at endPos
+    uint32_t tokenLen = static_cast<uint32_t>(endPos - startPos);
+    if (tokenLen == 0)
         return "";
 
-    // Grab the std::string from the ByteBuffer up to the delimiter
-    auto str = std::make_unique<char[]>(size);
-    getBytes((uint8_t*)str.get(), size);
-    str[size - 1] = 0x00; // NULL termination
-    std::string ret = str.get();
+    // Grab the token bytes (excludes delimiter), then step past the delimiter
+    auto str = std::make_unique<char[]>(tokenLen + 1);
+    getBytes(reinterpret_cast<uint8_t*>(str.get()), tokenLen);
+    str[tokenLen] = '\0';
+    std::string ret(str.get(), tokenLen);
 
-    // Increment the read position PAST the delimiter
-    setReadPos(endPos + 1);
+    // Advance the read position past the delimiter
+    setReadPos(static_cast<uint32_t>(endPos) + 1);
 
     return ret;
 }
@@ -170,7 +172,7 @@ void HTTPMessage::parseHeaders() {
     while (hline.size() > 0) {
         // Case where values are on multiple lines ending with a comma
         app = hline;
-        while (app[app.size() - 1] == ',') {
+        while (!app.empty() && app[app.size() - 1] == ',') {
             app = getLine();
             hline += app;
         }
@@ -196,16 +198,26 @@ bool HTTPMessage::parseBody() {
         return true;
 
     uint32_t remainingLen = bytesRemaining();
-    uint32_t contentLen = atoi(hlenstr.c_str());
+    uint32_t contentLen = 0;
+    {
+        auto [ptr, ec] = std::from_chars(hlenstr.data(), hlenstr.data() + hlenstr.size(), contentLen);
+        if (ec != std::errc{}) {
+            parseErrorStr = std::format("Invalid Content-Length value: {}", hlenstr);
+            this->dataLen = 0;
+            return false;
+        }
+    }
 
     // contentLen should NOT exceed the remaining number of bytes in the buffer
     // Add 1 to bytesRemaining so it includes the byte at the current read position
-    if (contentLen > remainingLen + 1) {
+    if (static_cast<uint64_t>(contentLen) > static_cast<uint64_t>(remainingLen) + 1) {
         // If it exceeds, there's a potential security issue and we can't reliably parse
         parseErrorStr = std::format("Content-Length ({}) is greater than remaining bytes ({})", hlenstr, remainingLen);
+        this->dataLen = 0;
         return false;
     } else if (remainingLen > contentLen) {
         parseErrorStr = std::format("ByteBuffer remaining size to read ({}) is greater than provided Content-Length {}", remainingLen, contentLen);
+        this->dataLen = 0;
         return false;
     } else if (contentLen == 0) {
         // Nothing to read, which is fine
@@ -215,15 +227,9 @@ bool HTTPMessage::parseBody() {
         this->dataLen = contentLen;
     }
 
-    // Create a big enough buffer to store the data
-    this->data = new uint8_t[this->dataLen];
-
-    // Grab all the bytes from the current position to the end
-    uint32_t dIdx = 0;
-    for (uint32_t i = getReadPos(); i < remainingLen; i++) {
-        this->data[dIdx] = get(i);
-        dIdx++;
-    }
+    // Create a big enough buffer to store the data and read from the current position
+    this->data = std::make_unique<uint8_t[]>(this->dataLen);
+    getBytes(this->data.get(), this->dataLen);
 
     // We could handle chunked Request/Response parsing (with footers) here, but, we won't.
 
@@ -262,7 +268,7 @@ void HTTPMessage::addHeader(std::string const& line) {
 
     // Skip all leading spaces in the value
     int32_t i = 0;
-    while (i < value.size() && value.at(i) == 0x20) {
+    while (i < static_cast<int32_t>(value.size()) && value[i] == 0x20) {
         i++;
     }
     value = value.substr(i, value.size());
@@ -308,9 +314,9 @@ std::string HTTPMessage::getHeaderValue(std::string const& key) const {
     // Key wasn't found, try an all lowercase variant as some clients won't always use proper capitalization
     if (it == headers.end()) {
 
-        auto key_lower = std::string(key);
-        std::ranges::transform(key_lower.begin(), key_lower.end(), key_lower.begin(),
-            [](unsigned char c){ return std::tolower(c); });
+        auto key_lower = key
+            | std::views::transform([](unsigned char c){ return std::tolower(c); })
+            | std::ranges::to<std::string>();
 
         // Still not found, return empty string to indicate the Header value doesnt exist
         it = headers.find(key_lower);
@@ -360,4 +366,3 @@ uint32_t HTTPMessage::getNumHeaders() const {
 void HTTPMessage::clearHeaders() {
     headers.clear();
 }
-

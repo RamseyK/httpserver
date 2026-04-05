@@ -19,6 +19,7 @@
 #include "HTTPMessage.h"
 #include "HTTPResponse.h"
 
+#include <charconv>
 #include <format>
 #include <string>
 #include <memory>
@@ -101,8 +102,8 @@ std::unique_ptr<uint8_t[]> HTTPResponse::create() {
     putHeaders();
 
     // If theres body data, add it now
-    if ((this->data != nullptr) && this->dataLen > 0) {
-        putBytes(this->data, this->dataLen);
+    if (this->data && this->dataLen > 0) {
+        putBytes(this->data.get(), this->dataLen);
     }
 
     // Allocate space for the returned byte array and return it
@@ -125,8 +126,18 @@ bool HTTPResponse::parse() {
     // Get elements from the status line: <version> <status code> <reason>\r\n
     version = getStrElement();
     statusstr = getStrElement();
-    determineStatusCode();
     reason = getLine(); // Pull till \r\n termination
+
+    // Parse the status code integer directly; fall back to reason-string matching if malformed
+    {
+        int32_t code = 0;
+        auto [ptr, ec] = std::from_chars(statusstr.data(), statusstr.data() + statusstr.size(), code);
+        if (ec == std::errc{}) {
+            status = code;
+        } else {
+            determineStatusCode();
+        }
+    }
 
     // Optional - Validate the HTTP version. If there is a mismatch, discontinue parsing
     // if (strcmp(version.c_str(), HTTP_VERSION) != 0) {
