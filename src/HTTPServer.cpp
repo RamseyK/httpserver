@@ -19,6 +19,7 @@
 #include "HTTPServer.h"
 
 #include <array>
+#include <cerrno>
 #include <chrono>
 #include <string>
 #include <format>
@@ -101,8 +102,18 @@ bool HTTPServer::start() {
         return false;
     }
 
-    // Set socket as non blocking
-    fcntl(listenSocket, F_SETFL, O_NONBLOCK);
+    // Allow immediate reuse of the port after restart (prevents "address already in use" on quick restarts)
+    int32_t opt = 1;
+    if (setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0) {
+        std::print("Failed to set SO_REUSEADDR\n");
+        return false;
+    }
+
+    // Set socket as non-blocking
+    if (fcntl(listenSocket, F_SETFL, O_NONBLOCK) == -1) {
+        std::print("Failed to set listen socket non-blocking\n");
+        return false;
+    }
 
     // Populate the server address structure
     // modify to support multiple address families (bottom): http://eradman.com/posts/kqueue-tcp.html
@@ -195,6 +206,9 @@ void HTTPServer::updateEvent(int32_t ident, int16_t filter, uint16_t flags, uint
     struct kevent kev;
     EV_SET(&kev, ident, filter, flags, fflags, data, udata);
     kevent(kqfd, &kev, 1, NULL, 0, NULL);
+    // if (kevent(kqfd, &kev, 1, NULL, 0, NULL) == -1) {
+    //     std::print("kevent failed for fd {} filter {} flags {}: errno {}\n", ident, filter, flags, errno);
+    // }
 }
 
 /**
@@ -217,7 +231,7 @@ void HTTPServer::process() {
         for (int32_t i = 0; i < nev; i++) {
 
             // A client is waiting to connect
-            if (evList[i].ident == (uint32_t)listenSocket) {
+            if (evList[i].ident == static_cast<uintptr_t>(listenSocket)) {
                 acceptConnection();
                 continue;
             }
@@ -280,8 +294,12 @@ void HTTPServer::acceptConnection() {
     if (clfd == INVALID_SOCKET)
         return;
 
-    // Set socket as non blocking
-    fcntl(clfd, F_SETFL, O_NONBLOCK);
+    // Set socket as non-blocking; close and reject the connection if this fails
+    if (fcntl(clfd, F_SETFL, O_NONBLOCK) == -1) {
+        std::print("Failed to set client socket non-blocking, rejecting connection\n");
+        close(clfd);
+        return;
+    }
 
     // Add kqueue event to track the new client socket for READ and WRITE events
     updateEvent(clfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -595,13 +613,9 @@ void HTTPServer::sendStatusResponse(std::shared_ptr<Client> cl, int32_t status, 
         body +=  ": " + msg;
 
     uint32_t slen = body.length();
-    auto sdata = new uint8_t[slen];
-    memset(sdata, 0x00, slen);
-    strncpy((char*)sdata, body.c_str(), slen);
-
     resp->addHeader("Content-Type", "text/plain");
     resp->addHeader("Content-Length", slen);
-    resp->setData(sdata, slen);
+    resp->setData(reinterpret_cast<const uint8_t*>(body.data()), slen);
 
     sendResponse(cl, std::move(resp), true);
 }

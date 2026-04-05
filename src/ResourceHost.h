@@ -20,6 +20,7 @@
 #define _RESOURCEHOST_H_
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -49,7 +50,7 @@ public:
     ~ResourceHost() = default;
 
     // Returns a Resource based on URI
-    std::unique_ptr<Resource> getResource(std::string const& uri);
+    std::unique_ptr<Resource> getResource(std::string_view uri);
 };
 
 #endif

@@ -22,6 +22,7 @@
 #include "SendQueueItem.h"
 
 #include <memory>
+#include <string>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -48,8 +49,10 @@ public:
         return socketDesc;
     }
 
-    char* getClientIP() {
-        return inet_ntoa(clientAddr.sin_addr);
+    std::string getClientIP() const {
+        char buf[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &clientAddr.sin_addr, buf, sizeof(buf));
+        return buf;
     }
 
     void addToSendQueue(std::shared_ptr<SendQueueItem> item);

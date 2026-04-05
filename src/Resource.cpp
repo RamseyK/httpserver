@@ -23,10 +23,4 @@
 Resource::Resource(std::string const& loc, bool dir) : location(loc), directory(dir) {
 }
 
-Resource::~Resource() {
-    if (data != nullptr) {
-        delete [] data;
-        data = nullptr;
-    }
-}
 

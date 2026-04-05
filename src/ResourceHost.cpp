@@ -18,6 +18,7 @@
 
 #include "ResourceHost.h"
 
+#include <filesystem>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -25,6 +26,23 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+// Escape special HTML characters to prevent XSS in generated directory listings
+static std::string htmlEscape(std::string_view s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        switch (c) {
+            case '&':  out += "&amp;";  break;
+            case '<':  out += "&lt;";   break;
+            case '>':  out += "&gt;";   break;
+            case '"':  out += "&quot;"; break;
+            case '\'': out += "&#39;";  break;
+            default:   out += c;        break;
+        }
+    }
+    return out;
+}
 
 // Valid files to serve as an index of a directory
 const static std::vector<std::string> g_validIndexes = {
@@ -80,8 +98,13 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
         return nullptr;
     }
 
+    // Reject files that would overflow uint32_t or are unreasonably large (256 MB limit)
+    constexpr off_t MAX_FILE_SIZE = 256 * 1024 * 1024;
+    if (sb.st_size < 0 || sb.st_size > MAX_FILE_SIZE)
+        return nullptr;
+    uint32_t len = static_cast<uint32_t>(sb.st_size);
+
     std::ifstream file;
-    uint32_t len = 0;
 
     // Open the file
     file.open(path, std::ios::binary);
@@ -90,13 +113,9 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
     if (!file.is_open())
         return nullptr;
 
-    // Get the length of the file
-    len = sb.st_size;
-
     // Allocate memory for contents of file and read in the contents
-    auto fdata = new uint8_t[len];
-    memset(fdata, 0x00, len);
-    file.read((char*)fdata, len);
+    auto fdata = std::make_unique<uint8_t[]>(len);
+    file.read(reinterpret_cast<char*>(fdata.get()), len);
 
     // Close the file
     file.close();
@@ -107,7 +126,7 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
         resource->setMimeType("application/octet-stream");  // default to binary
     }
 
-    resource->setData(fdata, len);
+    resource->setData(std::move(fdata), len);
 
     return resource;
 }
@@ -145,13 +164,12 @@ std::unique_ptr<Resource> ResourceHost::readDirectory(std::string path, struct s
     std::string listing = generateDirList(path);
 
     uint32_t slen = listing.length();
-    auto sdata = new uint8_t[slen];
-    memset(sdata, 0x00, slen);
-    strncpy((char*)sdata, listing.c_str(), slen);
+    auto sdata = std::make_unique<uint8_t[]>(slen);
+    std::memcpy(sdata.get(), listing.data(), slen);
 
     auto resource = std::make_unique<Resource>(path, true);
     resource->setMimeType("text/html");
-    resource->setData(sdata, slen);
+    resource->setData(std::move(sdata), slen);
 
     return resource;
 }
@@ -169,8 +187,10 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
     if (uri_pos != std::string::npos)
         uri = path.substr(uri_pos + baseDiskPath.length());
 
+    std::string escaped_uri = htmlEscape(uri);
+
     std::stringstream ret;
-    ret << "<html><head><title>" << uri << "</title></head><body>";
+    ret << "<html><head><title>" << escaped_uri << "</title></head><body>";
 
     const struct dirent* ent = nullptr;
     DIR* dir = opendir(path.c_str());
@@ -178,7 +198,7 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
         return "";
 
     // Page title, displaying the URI of the directory being listed
-    ret << "<h1>Index of " << uri << "</h1><hr /><br />";
+    ret << "<h1>Index of " << escaped_uri << "</h1><hr /><br />";
 
     // Add all files and directories to the return
     while ((ent = readdir(dir)) != nullptr) {
@@ -187,7 +207,8 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
             continue;
 
         // Display link to object in directory:
-        ret << "<a href=\"" << uri << ent->d_name << "\">" << ent->d_name << "</a><br />";
+        std::string escaped_name = htmlEscape(ent->d_name);
+        ret << "<a href=\"" << escaped_uri << escaped_name << "\">" << escaped_name << "</a><br />";
     }
 
     // Close the directory
@@ -205,16 +226,28 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
  * @param uri The URI sent in the request
  * @return NULL if unable to load the resource. Resource object
  */
-std::unique_ptr<Resource> ResourceHost::getResource(std::string const& uri) {
+std::unique_ptr<Resource> ResourceHost::getResource(std::string_view uri) {
     if (uri.length() > 255 || uri.empty())
         return nullptr;
 
-    // Do not allow directory traversal
-    if (uri.contains("../") || uri.contains("/.."))
+    // Resolve canonical paths to prevent traversal via "..", symlinks, or encoded sequences.
+    // std::filesystem::canonical requires the path to exist, which also acts as an existence pre-check.
+    std::error_code ec;
+    std::filesystem::path canonical_base = std::filesystem::canonical(baseDiskPath, ec);
+    if (ec) return nullptr;
+
+    std::filesystem::path canonical_path = std::filesystem::canonical(std::filesystem::path(baseDiskPath) / uri, ec);
+    if (ec) return nullptr; // Path does not exist or symlink loop
+
+    // Verify every component of canonical_base is a prefix of canonical_path
+    auto [base_end, path_end] = std::mismatch(
+        canonical_base.begin(), canonical_base.end(),
+        canonical_path.begin(), canonical_path.end()
+    );
+    if (base_end != canonical_base.end())
         return nullptr;
 
-    // Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
-    std::string path = baseDiskPath + uri;
+    std::string path = canonical_path.native();
     struct stat sb = {0};
     if (stat(path.c_str(), &sb) != 0)
         return nullptr; // File not found

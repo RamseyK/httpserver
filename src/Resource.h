@@ -19,12 +19,13 @@
 #ifndef _RESOURCE_H_
 #define _RESOURCE_H_
 
+#include <memory>
 #include <string>
 
 class Resource {
 
 private:
-    uint8_t* data = nullptr; // File data
+    std::unique_ptr<uint8_t[]> data; // File data
     uint32_t size = 0;
     std::string mimeType = "";
     std::string location; // Disk path location within the server
@@ -32,15 +33,15 @@ private:
 
 public:
     explicit Resource(std::string const& loc, bool dir = false);
-    ~Resource();
+    ~Resource() = default;
     Resource& operator=(Resource const&) = delete;  // Copy assignment
     Resource(Resource &&) = delete;  // Move
     Resource& operator=(Resource &&) = delete;  // Move assignment
 
     // Setters
 
-    void setData(uint8_t* d, uint32_t s) {
-        data = d;
+    void setData(std::unique_ptr<uint8_t[]> d, uint32_t s) {
+        data = std::move(d);
         size = s;
     }
 
@@ -62,8 +63,8 @@ public:
         return directory;
     }
 
-    uint8_t* getData() const {
-        return data;
+    const uint8_t* getData() const {
+        return data.get();
     }
 
     uint32_t getSize() const {
