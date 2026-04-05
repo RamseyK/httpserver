@@ -369,8 +369,11 @@ void HTTPServer::readClient(std::shared_ptr<Client> cl, int32_t data_len) {
 
     // If the read filter triggered with 0 bytes of data, client may want to disconnect
     // Set data_len to the Ethernet max MTU by default
+    constexpr int32_t MAX_READ_SIZE = 8 * 1024 * 1024; // 8 MB per-read cap
     if (data_len <= 0)
         data_len = 1400;
+    else if (data_len > MAX_READ_SIZE)
+        data_len = MAX_READ_SIZE;
 
     auto pData = std::make_unique<uint8_t[]>(data_len);
 

@@ -20,7 +20,6 @@
 
 #include <filesystem>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <fstream>
 #include <dirent.h>
@@ -189,16 +188,19 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
 
     std::string escaped_uri = htmlEscape(uri);
 
-    std::stringstream ret;
-    ret << "<html><head><title>" << escaped_uri << "</title></head><body>";
-
     const struct dirent* ent = nullptr;
     DIR* dir = opendir(path.c_str());
     if (dir == nullptr)
         return "";
 
-    // Page title, displaying the URI of the directory being listed
-    ret << "<h1>Index of " << escaped_uri << "</h1><hr /><br />";
+    std::string ret;
+    ret.reserve(1024);
+    ret += "<html><head><title>";
+    ret += escaped_uri;
+    ret += "</title></head><body>";
+    ret += "<h1>Index of ";
+    ret += escaped_uri;
+    ret += "</h1><hr /><br />";
 
     // Add all files and directories to the return
     while ((ent = readdir(dir)) != nullptr) {
@@ -208,15 +210,19 @@ std::string ResourceHost::generateDirList(std::string const& path) const {
 
         // Display link to object in directory:
         std::string escaped_name = htmlEscape(ent->d_name);
-        ret << "<a href=\"" << escaped_uri << escaped_name << "\">" << escaped_name << "</a><br />";
+        ret += "<a href=\"";
+        ret += escaped_uri;
+        ret += escaped_name;
+        ret += "\">";
+        ret += escaped_name;
+        ret += "</a><br />";
     }
 
     // Close the directory
     closedir(dir);
 
-    ret << "</body></html>";
-
-    return ret.str();
+    ret += "</body></html>";
+    return ret;
 }
 
 /**

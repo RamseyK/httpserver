@@ -16,12 +16,15 @@
     limitations under the License.
 */
 
+#include <charconv>
 #include <map>
+#include <optional>
 #include <print>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <fstream>
-#include <signal.h>
+#include <csignal>
 #include <sys/stat.h>
 
 #include "HTTPServer.h"
@@ -29,14 +32,14 @@
 
 static std::unique_ptr<HTTPServer> svr;
 
-// Ignore signals with this function
-void handleSigPipe([[maybe_unused]] int32_t snum) {
-    return;
+void handleSigPipe([[maybe_unused]] int snum) {
+    // Intentionally empty — suppress SIGPIPE without side effects
 }
 
-// Termination signal handler (Ctrl-C)
-void handleTermSig([[maybe_unused]] int32_t snum) {
-    svr->canRun = false;
+void handleTermSig([[maybe_unused]] int snum) {
+    // canRun is volatile bool — the write is visible to the process() loop.
+    // No std::print or non-trivial calls here; only the flag write.
+    if (svr) svr->canRun = false;
 }
 
 int main()
@@ -89,17 +92,29 @@ int main()
         vhost_alias_str.erase(0, pos + delimiter.length());
     } while (pos != std::string::npos);
 
+    // Helper: parse a decimal integer from a string, returns nullopt on any error
+    auto parse_int = [](std::string_view s) -> std::optional<int32_t> {
+        int32_t val = 0;
+        auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
+        if (ec != std::errc{} || ptr != s.data() + s.size())
+            return std::nullopt;
+        return val;
+    };
+
     // Check for optional drop_uid, drop_gid.  Ensure both are set
     int32_t drop_uid = 0;
     int32_t drop_gid = 0;
     if (config.contains("drop_uid") && config.contains("drop_gid")) {
-        drop_uid = atoi(config["drop_uid"].c_str());
-        drop_gid = atoi(config["drop_gid"].c_str());
+        auto uid_opt = parse_int(config["drop_uid"]);
+        auto gid_opt = parse_int(config["drop_gid"]);
 
-        if (drop_uid <= 0 || drop_gid <= 0) {
-            // Both must be set, otherwise set back to 0 so we dont use
-            drop_uid = drop_gid = 0;
+        if (!uid_opt || !gid_opt || *uid_opt <= 0 || *gid_opt <= 0) {
+            std::print("drop_uid and drop_gid must both be positive integers\n");
+            return -1;
         }
+
+        drop_uid = *uid_opt;
+        drop_gid = *gid_opt;
     }
 
     // Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.
@@ -110,8 +125,14 @@ int main()
     signal(SIGINT, &handleTermSig);
     signal(SIGTERM, &handleTermSig);
 
+    auto port_opt = parse_int(config["port"]);
+    if (!port_opt || *port_opt <= 0 || *port_opt > 65535) {
+        std::print("port must be a valid integer between 1 and 65535\n");
+        return -1;
+    }
+
     // Instantiate and start the server
-    svr = std::make_unique<HTTPServer>(vhosts, atoi(config["port"].c_str()), config["diskpath"], drop_uid, drop_gid);
+    svr = std::make_unique<HTTPServer>(vhosts, *port_opt, config["diskpath"], drop_uid, drop_gid);
     if (!svr->start()) {
         svr->stop();
         return -1;

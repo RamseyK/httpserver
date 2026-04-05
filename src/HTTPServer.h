@@ -81,7 +81,7 @@ class HTTPServer {
     void sendResponse(std::shared_ptr<Client> cl, std::unique_ptr<HTTPResponse> resp, bool disconnect);
 
 public:
-    bool canRun = false;
+    volatile bool canRun = false;
 
 public:
     HTTPServer(std::vector<std::string> const& vhost_aliases, int32_t port, std::string const& diskpath, int32_t drop_uid=0, int32_t drop_gid=0);
