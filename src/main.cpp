@@ -106,13 +106,11 @@ int main()
         auto uid_opt = parse_int(config["drop_uid"]);
         auto gid_opt = parse_int(config["drop_gid"]);
 
-        if (!uid_opt || !gid_opt || *uid_opt <= 0 || *gid_opt <= 0) {
-            std::print("drop_uid and drop_gid must both be positive integers\n");
-            return -1;
+        // Only drop UID/GID if it's set and not 0
+        if (uid_opt && gid_opt && (*uid_opt > 0) && (*gid_opt > 0)) {
+            drop_uid = *uid_opt;
+            drop_gid = *gid_opt;
         }
-
-        drop_uid = *uid_opt;
-        drop_gid = *gid_opt;
     }
 
     // Ignore SIGPIPE "Broken pipe" signals when socket connections are broken.

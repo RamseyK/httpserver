@@ -19,8 +19,8 @@
 #include "ResourceHost.h"
 
 #include <algorithm>
-#include <filesystem>
 #include <memory>
+#include <print>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -239,24 +239,12 @@ std::unique_ptr<Resource> ResourceHost::getResource(std::string_view uri) {
     if (uri.length() > 255 || uri.empty())
         return nullptr;
 
-    // Resolve canonical paths to prevent traversal via "..", symlinks, or encoded sequences.
-    // std::filesystem::canonical requires the path to exist, which also acts as an existence pre-check.
-    std::error_code ec;
-    std::filesystem::path canonical_base = std::filesystem::canonical(baseDiskPath, ec);
-    if (ec) return nullptr;
-
-    std::filesystem::path canonical_path = std::filesystem::canonical(std::filesystem::path(baseDiskPath) / uri, ec);
-    if (ec) return nullptr; // Path does not exist or symlink loop
-
-    // Verify every component of canonical_base is a prefix of canonical_path
-    auto [base_end, path_end] = std::mismatch(
-        canonical_base.begin(), canonical_base.end(),
-        canonical_path.begin(), canonical_path.end()
-    );
-    if (base_end != canonical_base.end())
+    // Do not allow directory traversal
+    if (uri.contains("../") || uri.contains("/.."))
         return nullptr;
 
-    std::string path = canonical_path.native();
+    // Gather info about the resource with stat: determine if it's a directory or file, check if its owned by group/user, modify times
+    std::string path = baseDiskPath + std::string(uri);
     struct stat sb = {0};
     if (stat(path.c_str(), &sb) != 0)
         return nullptr; // File not found
