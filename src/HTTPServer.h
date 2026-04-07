@@ -40,6 +40,7 @@
 
 constexpr int32_t INVALID_SOCKET = -1;
 constexpr uint32_t QUEUE_SIZE = 1024;
+constexpr uint32_t MAX_CLIENTS = 1024;
 
 class HTTPServer {
     // Server Socket

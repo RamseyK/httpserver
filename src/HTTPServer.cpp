@@ -289,6 +289,12 @@ void HTTPServer::acceptConnection() {
     if (clfd == INVALID_SOCKET)
         return;
 
+    // Reject the connection if the client limit has been reached to prevent file descriptor exhaustion
+    if (clientMap.size() >= MAX_CLIENTS) {
+        close(clfd);
+        return;
+    }
+
     // Set socket as non-blocking; close and reject the connection if this fails
     if (fcntl(clfd, F_SETFL, O_NONBLOCK) == -1) {
         std::print("Failed to set client socket non-blocking, rejecting connection\n");

@@ -45,6 +45,8 @@ void HTTPResponse::determineStatusCode() {
         status = Status(OK);
     } else if (reason.contains("Bad Request")) {
         status = Status(BAD_REQUEST);
+    } else if (reason.contains("Method Not Allowed")) {
+        status = Status(METHOD_NOT_ALLOWED);
     } else if (reason.contains("Not Found")) {
         status = Status(NOT_FOUND);
     } else if (reason.contains("Server Error")) {
@@ -69,6 +71,9 @@ void HTTPResponse::determineReasonStr() {
         break;
     case Status(BAD_REQUEST):
         reason = "Bad Request";
+        break;
+    case Status(METHOD_NOT_ALLOWED):
+        reason = "Method Not Allowed";
         break;
     case Status(NOT_FOUND):
         reason = "Not Found";
