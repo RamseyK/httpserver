@@ -84,8 +84,8 @@ std::string ResourceHost::lookupMimeType(std::string const& ext) const {
  * @return Return's the resource object upon successful load
  */
 std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct stat const& sb) {
-    // Make sure the webserver USER owns the file
-    if (!(sb.st_mode & S_IRWXU))
+    // Make sure the webserver user or group can read the file
+    if (!((sb.st_mode & S_IRUSR) || (sb.st_mode & S_IRGRP)))
         return nullptr;
 
     // Create a new Resource object and setup it's contents
@@ -158,8 +158,8 @@ std::unique_ptr<Resource> ResourceHost::readDirectory(std::string path, struct s
             return readFile(loadIndex, sidx);
     }
 
-    // Make sure the webserver USER owns the directory
-    if (!(sb.st_mode & S_IRWXU))
+    // Make sure the webserver user or group can read the file
+    if (!((sb.st_mode & S_IRUSR) || (sb.st_mode & S_IRGRP)))
         return nullptr;
 
     // Generate an HTML directory listing
