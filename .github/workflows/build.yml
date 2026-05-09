@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
 
 jobs:
   macos:
@@ -59,6 +64,16 @@ jobs:
           path: bin/httpserver
           if-no-files-found: error
 
+      - name: Attach binary to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          asset="httpserver-macos-${{ matrix.arch }}"
+          cp bin/httpserver "$asset"
+          gh release upload "${{ github.event.release.tag_name }}" "$asset" --clobber
+
   freebsd:
     name: FreeBSD 15 (amd64)
     runs-on: ubuntu-latest
@@ -104,3 +119,13 @@ jobs:
           name: httpserver-freebsd-15-amd64
           path: bin/httpserver
           if-no-files-found: error
+
+      - name: Attach binary to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          asset="httpserver-freebsd15-amd64"
+          cp bin/httpserver "$asset"
+          gh release upload "${{ github.event.release.tag_name }}" "$asset" --clobber
