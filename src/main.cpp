@@ -44,27 +44,22 @@ int main()
 {
     // Parse config file
     std::map<std::string, std::string, std::less<>> config;
-    std::fstream cfile;
-    std::string line;
-    std::string key;
-    std::string val;
-    int32_t epos = 0;
-    cfile.open("server.config");
+    std::ifstream cfile("server.config");
     if (!cfile.is_open()) {
         std::print("Unable to open server.config file in working directory\n");
         return -1;
     }
+    std::string line;
     while (getline(cfile, line)) {
         // Skip empty lines or those beginning with a #
         if (line.length() == 0 || line.rfind("#", 0) == 0)
             continue;
 
-        epos = line.find("=");
-        key = line.substr(0, epos);
-        val = line.substr(epos + 1, line.length());
+        size_t epos = line.find("=");
+        std::string key = line.substr(0, epos);
+        std::string val = line.substr(epos + 1, line.length());
         config.try_emplace(key, val);
     }
-    cfile.close();
 
     // Validate at least vhost, port, and diskpath are present
     if (!config.contains("vhost") || !config.contains("port") || !config.contains("diskpath")) {

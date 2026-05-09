@@ -144,15 +144,13 @@ std::unique_ptr<Resource> ResourceHost::readFile(std::string const& path, struct
  */
 std::unique_ptr<Resource> ResourceHost::readDirectory(std::string path, struct stat const& sb) {
     // Make the path end with a / (for consistency) if it doesnt already
-    if (path.empty() || path[path.length() - 1] != '/')
+    if (!path.ends_with('/'))
         path += "/";
 
     // Probe for valid indexes
-    uint32_t numIndexes = std::size(g_validIndexes);
-    std::string loadIndex;
-    struct stat sidx = {0};
-    for (uint32_t i = 0; i < numIndexes; i++) {
-        loadIndex = path + g_validIndexes[i];
+    for (auto const& idx : g_validIndexes) {
+        std::string loadIndex = path + idx;
+        struct stat sidx = {0};
         // Found a suitable index file to load and return to the client
         if (stat(loadIndex.c_str(), &sidx) == 0)
             return readFile(loadIndex, sidx);
