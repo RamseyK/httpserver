@@ -1,0 +1,106 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-13
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          clang++ --version
+          make --version | head -n 1
+          uname -a
+
+      - name: Build (release)
+        run: make
+
+      - name: Smoke test (start server, fetch a file)
+        run: |
+          set -euo pipefail
+          mkdir -p htdocs
+          echo "hello from CI" > htdocs/index.html
+          cat > server.config <<EOF
+          vhost=127.0.0.1
+          port=8080
+          diskpath=./htdocs
+          EOF
+          ./bin/httpserver &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8080/index.html; then
+              break
+            fi
+            sleep 0.5
+          done
+          body=$(curl -fsS http://127.0.0.1:8080/index.html)
+          test "$body" = "hello from CI"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: httpserver-macos-${{ matrix.arch }}
+          path: bin/httpserver
+          if-no-files-found: error
+
+  freebsd:
+    name: FreeBSD 15 (amd64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and smoke test in FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "15.0"
+          usesh: true
+          prepare: |
+            pkg install -y gmake curl
+          run: |
+            set -eu
+            clang++ --version
+            gmake --version | head -n 1
+            uname -a
+            gmake
+            mkdir -p htdocs
+            echo "hello from CI" > htdocs/index.html
+            cat > server.config <<EOF
+            vhost=127.0.0.1
+            port=8080
+            diskpath=./htdocs
+            EOF
+            ./bin/httpserver &
+            server_pid=$!
+            trap "kill $server_pid 2>/dev/null || true" EXIT
+            i=0
+            while [ $i -lt 20 ]; do
+              if curl -fsS -o /dev/null http://127.0.0.1:8080/index.html; then
+                break
+              fi
+              sleep 1
+              i=$((i+1))
+            done
+            body=$(curl -fsS http://127.0.0.1:8080/index.html)
+            test "$body" = "hello from CI"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: httpserver-freebsd-15-amd64
+          path: bin/httpserver
+          if-no-files-found: error
